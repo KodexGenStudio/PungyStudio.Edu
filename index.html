@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pungystudio AI - Document Suite, Summary & Exam Generator</title>
+    <title>Pungystudio AI - Dynamic Verification Suite</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Mammoth.js for .docx parsing -->
@@ -11,25 +11,49 @@
 </head>
 <body class="bg-slate-900 min-h-screen text-slate-100 flex flex-col items-center justify-center py-8 px-4">
 
-    <!-- Human Verification Screen -->
-    <div id="verification-screen" class="w-full max-w-md bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 p-6 md:p-8 space-y-6">
+    <!-- Step 1: Config Setup Screen -->
+    <div id="config-screen" class="w-full max-w-md bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 p-6 md:p-8 space-y-6">
         <div class="text-center space-y-2">
-            <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Security Gate</span>
-            <h2 class="text-xl font-bold text-white mt-1">Human Verification Required</h2>
-            <p class="text-xs text-slate-400">Please complete the verification prompt check to proceed to the document suite workspace.</p>
+            <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Dynamic Gate</span>
+            <h2 class="text-xl font-bold text-white mt-1">Session Setup</h2>
+            <p class="text-xs text-slate-400">Enter your API key and GitHub prompt.txt raw URL to generate AI verification challenges.</p>
         </div>
 
         <div class="space-y-4">
             <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1.5">Verification Prompt / Access Token</label>
-                <input type="password" id="verification-input" placeholder="Enter verification prompt or token..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                <label class="block text-xs font-medium text-slate-300 mb-1.5">Gemini API Key</label>
+                <input type="password" id="api-key-input" value="AQ.Ab8RN6KwDfkFI77fjYWE18Q5vQDlbA72qk_YUXRYoLHrPmCdaw" placeholder="Enter API key..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 font-mono">
             </div>
-            <div id="verification-error" class="hidden text-xs text-red-400 bg-red-950/50 border border-red-800 p-2.5 rounded-lg"></div>
-            <button id="verify-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow transition-all text-sm">Verify & Proceed</button>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1.5">GitHub prompt.txt Raw URL</label>
+                <input type="text" id="prompt-url-input" placeholder="https://raw.githubusercontent.com/.../prompt.txt" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500 font-mono">
+            </div>
+            <div id="config-error" class="hidden text-xs text-red-400 bg-red-950/50 border border-red-800 p-2.5 rounded-lg"></div>
+            <button id="load-challenge-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow transition-all text-sm flex items-center justify-center space-x-2">
+                <svg class="w-4 h-4 animate-spin hidden" id="config-spinner" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Generate AI Verification Challenge</span>
+            </button>
         </div>
     </div>
 
-    <!-- Main Application Container (Hidden until verified) -->
+    <!-- Step 2: AI Verification Challenge Screen (Hidden initially) -->
+    <div id="verification-screen" class="w-full max-w-xl bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 p-6 md:p-8 space-y-6 hidden">
+        <div class="text-center space-y-2">
+            <span class="bg-purple-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">AI Security Gate</span>
+            <h2 class="text-xl font-bold text-white mt-1">Answer Verification Challenge</h2>
+            <p class="text-xs text-slate-400">The following questions were dynamically generated using instructions from your prompt.txt and Gemini API.</p>
+        </div>
+
+        <div id="verification-questions-container" class="space-y-4 max-h-[350px] overflow-y-auto pr-1"></div>
+        <div id="verification-eval-error" class="hidden text-xs text-red-400 bg-red-950/50 border border-red-800 p-2.5 rounded-lg"></div>
+        
+        <button id="submit-verification-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg shadow transition-all text-sm">Submit Verification Answers</button>
+    </div>
+
+    <!-- Main Application Container (Hidden until fully verified) -->
     <div id="main-app-container" class="w-full max-w-5xl bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 p-6 md:p-8 hidden">
         
         <!-- Brand Header -->
@@ -37,10 +61,10 @@
             <div>
                 <div class="flex items-center space-x-2">
                     <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Pungystudio AI</span>
-                    <span class="text-xs text-slate-400 font-mono">v3.6 Pro (Verified Session)</span>
+                    <span class="text-xs text-slate-400 font-mono">v3.8 Pro (Verified)</span>
                 </div>
                 <h1 class="text-2xl font-bold text-white mt-2">Universal Document & AI Study Suite</h1>
-                <p class="text-sm text-slate-400 mt-1">View files, AI-ify complex text, generate dedicated summaries, and build exams instantly.</p>
+                <p class="text-sm text-slate-400 mt-1">View files, AI-ify complex text, generate summaries, and build exams.</p>
             </div>
             <button id="lock-app-btn" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded-lg transition-colors self-start md:self-auto">Lock Session</button>
         </header>
@@ -156,17 +180,24 @@
     </div>
 
     <script>
-        // ==========================================
-        // BAKED-IN API TOKEN CONFIGURATION
-        // ==========================================
-        const FIXED_API_KEY = "AQ.Ab8RN6KwDfkFI77fjYWE18Q5vQDlbA72qk_YUXRYoLHrPmCdaw";
+        let ACTIVE_API_KEY = "";
+        let VERIFICATION_CHALLENGE_DATA = [];
+        let verificationUserAnswers = {};
 
-        // Verification Elements
+        // Screen Elements
+        const configScreen = document.getElementById('config-screen');
         const verificationScreen = document.getElementById('verification-screen');
         const mainAppContainer = document.getElementById('main-app-container');
-        const verificationInput = document.getElementById('verification-input');
-        const verifyBtn = document.getElementById('verify-btn');
-        const verificationError = document.getElementById('verification-error');
+        
+        const apiKeyInput = document.getElementById('api-key-input');
+        const promptUrlInput = document.getElementById('prompt-url-input');
+        const loadChallengeBtn = document.getElementById('load-challenge-btn');
+        const configSpinner = document.getElementById('config-spinner');
+        const configError = document.getElementById('config-error');
+
+        const verificationQuestionsContainer = document.getElementById('verification-questions-container');
+        const submitVerificationBtn = document.getElementById('submit-verification-btn');
+        const verificationEvalError = document.getElementById('verification-eval-error');
         const lockAppBtn = document.getElementById('lock-app-btn');
 
         // Main App Elements
@@ -219,32 +250,113 @@
         let quizData = [];
         let userAnswers = {};
 
-        // ==========================================
-        // HUMAN VERIFICATION HANDLERS
-        // ==========================================
-        verifyBtn.addEventListener('click', handleVerification);
-        verificationInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleVerification();
+        loadChallengeBtn.addEventListener('click', async () => {
+            const key = apiKeyInput.value.trim();
+            const promptUrl = promptUrlInput.value.trim();
+
+            if (!key) {
+                configError.textContent = 'Please enter your Gemini API key.';
+                configError.classList.remove('hidden');
+                return;
+            }
+            if (!promptUrl) {
+                configError.textContent = 'Please enter the raw URL of your prompt.txt file.';
+                configError.classList.remove('hidden');
+                return;
+            }
+
+            ACTIVE_API_KEY = key;
+            configError.classList.add('hidden');
+            configSpinner.classList.remove('hidden');
+            loadChallengeBtn.disabled = true;
+
+            try {
+                // Step 1: Fetch prompt.txt from GitHub
+                const promptRes = await fetch(promptUrl);
+                if (!promptRes.ok) throw new Error('Failed to fetch prompt.txt from GitHub URL.');
+                const promptInstructions = await promptRes.text();
+
+                // Step 2: Use the API key to generate verification challenge questions based on prompt.txt
+                const challengeGenerationPrompt = `${promptInstructions}\n\nBased on the instructions above, generate a verification challenge consisting of 3 to 5 questions. Return EXCLUSIVELY a JSON array of objects with keys: "question", "options" (array of 4 choices), "answer" (matching exact option string).`;
+
+                const aiResponseText = await callGeminiApiDirect(ACTIVE_API_KEY, challengeGenerationPrompt);
+                let cleanedJson = aiResponseText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
+                
+                VERIFICATION_CHALLENGE_DATA = JSON.parse(cleanedJson);
+                renderVerificationChallenge();
+
+                configScreen.classList.add('hidden');
+                verificationScreen.classList.remove('hidden');
+
+            } catch (err) {
+                configError.textContent = 'Setup error: ' + err.message;
+                configError.classList.remove('hidden');
+            } finally {
+                configSpinner.classList.add('hidden');
+                loadChallengeBtn.disabled = false;
+            }
         });
 
-        function handleVerification() {
-            const val = verificationInput.value.trim();
-            if (val === FIXED_API_KEY || val.length > 5) {
-                verificationError.classList.add('hidden');
-                verificationScreen.classList.add('hidden');
-                mainAppContainer.classList.remove('hidden');
-                document.body.classList.remove('justify-center');
-            } else {
-                verificationError.textContent = 'Invalid verification prompt or token. Please try again.';
-                verificationError.classList.remove('hidden');
-            }
+        function renderVerificationChallenge() {
+            verificationQuestionsContainer.innerHTML = '';
+            verificationUserAnswers = {};
+
+            VERIFICATION_CHALLENGE_DATA.forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900 border border-slate-700 p-4 rounded-xl space-y-2';
+
+                let optsHtml = '';
+                q.options.forEach(opt => {
+                    optsHtml += `
+                        <label class="flex items-start space-x-3 p-2.5 rounded-lg border border-slate-800 bg-slate-800/60 hover:bg-slate-800 cursor-pointer text-xs">
+                            <input type="radio" name="v-q-${idx}" value="${opt}" class="mt-0.5 text-indigo-500" onchange="storeVerificationChoice(${idx}, '${opt.replace(/'/g, "\\'")}')">
+                            <span class="text-slate-200">${opt}</span>
+                        </label>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <p class="font-medium text-white text-sm">Q${idx + 1}. ${q.question}</p>
+                    <div class="space-y-1.5 mt-2">${optsHtml}</div>
+                `;
+                verificationQuestionsContainer.appendChild(card);
+            });
         }
+
+        window.storeVerificationChoice = function(idx, val) {
+            verificationUserAnswers[idx] = val;
+        }
+
+        submitVerificationBtn.addEventListener('click', () => {
+            if (Object.keys(verificationUserAnswers).length < VERIFICATION_CHALLENGE_DATA.length) {
+                verificationEvalError.textContent = 'Please answer all verification challenge questions.';
+                verificationEvalError.classList.remove('hidden');
+                return;
+            }
+
+            let passed = true;
+            VERIFICATION_CHALLENGE_DATA.forEach((q, idx) => {
+                if (verificationUserAnswers[idx] !== q.answer) {
+                    passed = false;
+                }
+            });
+
+            if (!passed) {
+                verificationEvalError.textContent = 'Incorrect verification answers. Please review your answers and try again.';
+                verificationEvalError.classList.remove('hidden');
+                return;
+            }
+
+            verificationEvalError.classList.add('hidden');
+            verificationScreen.classList.add('hidden');
+            mainAppContainer.classList.remove('hidden');
+            document.body.classList.remove('justify-center');
+        });
 
         lockAppBtn.addEventListener('click', () => {
             mainAppContainer.classList.add('hidden');
-            verificationScreen.classList.remove('hidden');
+            configScreen.classList.remove('hidden');
             document.body.classList.add('justify-center');
-            verificationInput.value = '';
             resetWorkspace();
         });
 
@@ -387,7 +499,7 @@
                 return;
             }
 
-            showError('Unsupported file format selected. Please upload a .docx, PDF, text, or image file.');
+            showError('Unsupported file format selected.');
         }
 
         function showWorkspace() {
@@ -396,13 +508,8 @@
             switchTab('viewer');
         }
 
-        async function callGeminiApi(promptText) {
-            const apiKey = FIXED_API_KEY.trim();
-            if (!apiKey) {
-                throw new Error('API token is missing.');
-            }
-
-            let url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent';
+        async function callGeminiApiDirect(apiKey, promptText) {
+            let url = '[https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent)';
             const headers = { 'Content-Type': 'application/json' };
 
             if (apiKey.startsWith('AQ.')) {
@@ -439,26 +546,14 @@
             aiIfyBtn.disabled = true;
 
             try {
-                const prompt = `You are an expert document organizer and tutor. Analyze the following complex document text and restructure it to make it exceptionally easy to read through. 
-Add clear topics, sub-topics, section headings, and semantic inline tags (e.g., <span class="bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded text-xs font-mono mr-2">Tag Name</span>) to separate different concepts.
+                const prompt = `Analyze the following document text and restructure it with topics, sub-topics, section headings, and semantic inline tags (<span class="bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded text-xs font-mono mr-2">Tag</span>). Return cleaned Tailwind CSS HTML classes.\n\nDocument Context:\n${rawFileText.substring(0, 20000)}`;
 
-Return your response formatted cleanly in Tailwind CSS HTML classes.
-
-Document Context:
-${rawFileText.substring(0, 20000)}`;
-
-                let responseText = await callGeminiApi(prompt);
-
-                let cleaned = responseText.trim();
-                if (cleaned.startsWith('```html')) {
-                    cleaned = cleaned.replace(/^```html/, '').replace(/```$/, '').trim();
-                } else if (cleaned.startsWith('```')) {
-                    cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
-                }
+                let responseText = await callGeminiApiDirect(ACTIVE_API_KEY, prompt);
+                let cleaned = responseText.replace(/^```html/, '').replace(/^```/, '').replace(/```$/, '').trim();
 
                 viewerContent.innerHTML = `
                     <div class="mb-4 flex items-center justify-between text-xs text-indigo-400 font-medium bg-indigo-950/40 border border-indigo-900 p-2 rounded-lg">
-                        <span>✨ Document successfully AI-ified with topics, sub-topics & tags!</span>
+                        <span>✨ Document AI-ified successfully!</span>
                         <button id="revert-view-btn" class="underline text-slate-300 hover:text-white">Show Original</button>
                     </div>
                     <div class="space-y-4">${cleaned}</div>
@@ -467,7 +562,6 @@ ${rawFileText.substring(0, 20000)}`;
                 document.getElementById('revert-view-btn').addEventListener('click', () => {
                     viewerContent.innerHTML = originalViewerHtml;
                 });
-
             } catch (err) {
                 showError('AI-ify Error: ' + err.message);
             } finally {
@@ -484,33 +578,15 @@ ${rawFileText.substring(0, 20000)}`;
             generateSummaryBtn.disabled = true;
 
             try {
-                const prompt = `You are an expert researcher and academic analyst. Provide a comprehensive, structured executive summary of the following document text. 
-Include:
-1. Executive Overview
-2. Core Key Takeaways (bullet points)
-3. Main Subject Breakdowns (Topics & Sub-topics)
-4. Conclusion or Final Verdict
-
-Return your response formatted cleanly in Tailwind CSS HTML classes.
-
-Document Context:
-${rawFileText.substring(0, 25000)}`;
-
-                let responseText = await callGeminiApi(prompt);
-
-                let cleaned = responseText.trim();
-                if (cleaned.startsWith('```html')) {
-                    cleaned = cleaned.replace(/^```html/, '').replace(/```$/, '').trim();
-                } else if (cleaned.startsWith('```')) {
-                    cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
-                }
+                const prompt = `Provide a structured executive summary with Overview, Key Takeaways, and Subject Breakdowns formatted in Tailwind CSS HTML.\n\nDocument Context:\n${rawFileText.substring(0, 25000)}`;
+                let responseText = await callGeminiApiDirect(ACTIVE_API_KEY, prompt);
+                let cleaned = responseText.replace(/^```html/, '').replace(/^```/, '').replace(/```$/, '').trim();
 
                 summaryContent.innerHTML = cleaned;
                 summaryIntro.classList.add('hidden');
                 summaryActiveArea.classList.remove('hidden');
-
             } catch (err) {
-                showError('Summary Generation error: ' + err.message);
+                showError('Summary error: ' + err.message);
             } finally {
                 summarySpinner.classList.add('hidden');
                 summaryBtnText.textContent = 'Generate AI Summary';
@@ -524,35 +600,18 @@ ${rawFileText.substring(0, 25000)}`;
         generateExamBtn.addEventListener('click', async () => {
             hideError();
             examSpinner.classList.remove('hidden');
-            examBtnText.textContent = 'Generating All Questions...';
+            examBtnText.textContent = 'Generating Quiz...';
             generateExamBtn.disabled = true;
 
             try {
-                const prompt = `You are an expert professor and examiner. Based comprehensively on the entire document context provided below, generate a complete assessment quiz consisting of multiple-choice questions (create between 10 to 25 questions to thoroughly test every major section). 
-
-Return your response EXCLUSIVELY as a valid JSON array of objects. Each object must have these exact keys:
-- "question": string
-- "options": array of 4 choices (strings)
-- "answer": string (must precisely match one option)
-- "explanation": string (why the answer is correct)
-
-Document Context:
-${rawFileText.substring(0, 25000)}`;
-
-                let responseText = await callGeminiApi(prompt);
-
-                let cleaned = responseText.trim();
-                if (cleaned.startsWith('```json')) {
-                    cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
-                } else if (cleaned.startsWith('```')) {
-                    cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
-                }
+                const prompt = `Generate a complete assessment quiz of 10 to 25 multiple-choice questions based on the document. Return EXCLUSIVELY a JSON array of objects with keys: "question", "options" (array of 4), "answer", "explanation".\n\nDocument Context:\n${rawFileText.substring(0, 25000)}`;
+                let responseText = await callGeminiApiDirect(ACTIVE_API_KEY, prompt);
+                let cleaned = responseText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
 
                 quizData = JSON.parse(cleaned);
                 renderExamQuestions();
-
             } catch (err) {
-                showError('Exam Generation error: ' + err.message);
+                showError('Exam generation error: ' + err.message);
             } finally {
                 examSpinner.classList.add('hidden');
                 examBtnText.textContent = 'Generate Full Assessment Exam';
@@ -563,7 +622,6 @@ ${rawFileText.substring(0, 25000)}`;
         function renderExamQuestions() {
             questionsContainer.innerHTML = '';
             userAnswers = {};
-
             totalQuestionsBadge.textContent = `${quizData.length} Questions Generated`;
 
             quizData.forEach((q, qIndex) => {
@@ -574,7 +632,7 @@ ${rawFileText.substring(0, 25000)}`;
                 q.options.forEach(opt => {
                     optsHtml += `
                         <label class="flex items-start space-x-3 p-3 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 cursor-pointer transition-colors">
-                            <input type="radio" name="q-${qIndex}" value="${opt}" class="mt-1 text-indigo-500 focus:ring-indigo-500" onchange="storeChoice(${qIndex}, '${opt.replace(/'/g, "\\'")}')">
+                            <input type="radio" name="q-${qIndex}" value="${opt}" class="mt-1 text-indigo-500" onchange="storeChoice(${qIndex}, '${opt.replace(/'/g, "\\'")}')">
                             <span class="text-sm text-slate-200">${opt}</span>
                         </label>
                     `;
@@ -599,10 +657,6 @@ ${rawFileText.substring(0, 25000)}`;
         }
 
         submitExamBtn.addEventListener('click', () => {
-            if (Object.keys(userAnswers).length < quizData.length) {
-                if (!confirm('You have unanswered questions. Do you still wish to submit?')) return;
-            }
-
             let score = 0;
             quizData.forEach((q, idx) => {
                 const chosen = userAnswers[idx];
@@ -625,12 +679,7 @@ ${rawFileText.substring(0, 25000)}`;
 
             submitExamBtn.classList.add('hidden');
             scoreDisplay.textContent = `${score} / ${quizData.length}`;
-            
-            const ratio = score / quizData.length;
-            if (ratio === 1) scoreFeedback.textContent = 'Flawless performance! Full marks achieved.';
-            else if (ratio >= 0.7) scoreFeedback.textContent = 'Great proficiency demonstrated on this material.';
-            else scoreFeedback.textContent = 'Good effort. Review the explanations above to strengthen your mastery.';
-
+            scoreFeedback.textContent = score === quizData.length ? 'Flawless performance!' : 'Review the explanations above to strengthen your mastery.';
             resultsArea.classList.remove('hidden');
             resultsArea.scrollIntoView({ behavior: 'smooth' });
         });
