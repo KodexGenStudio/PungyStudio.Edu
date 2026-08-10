@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pungystudio AI - Document Suite, Summary & Exam Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Mammoth.js for .docx parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+</head>
+<body class="bg-slate-900 min-h-screen text-slate-100 flex flex-col items-center py-8 px-4 relative">
+
+    <!-- Robot Verification Modal Gate -->
+    <div id="robot-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full space-y-4 text-center shadow-2xl">
+            <div class="w-12 h-12 bg-indigo-600/20 border border-indigo-500/30 rounded-full flex items-center justify-center mx-auto text-indigo-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.56-2.803 9M12 11c0-3.517 1.009-6.56 2.803-9M12 11a7.001 7.001 0 01-7-7m7 7a7.001 7.001 0 007-7M9 21h6"/></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white">Security Verification</h3>
+            <p class="text-sm text-slate-300">Please prove you are human to access the Pungystudio AI suite.</p>
+            
+            <div id="robot-challenge-area" class="space-y-3 pt-2">
+                <button id="start-verification-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-all text-sm shadow">Start Verification Test</button>
+            </div>
+            <div id="robot-loading" class="hidden text-xs text-indigo-400 animate-pulse py-2">Generating verification test from GitHub prompt...</div>
+        </div>
+    </div>
+
+    <div class="w-full max-w-5xl bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 p-6 md:p-8">
+        
+        <!-- Brand Header -->
+        <header class="mb-6 border-b border-slate-700 pb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <div class="flex items-center space-x-2">
+                    <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Pungystudio AI</span>
+                    <span class="text-xs text-slate-400 font-mono">v3.6 Pro</span>
+                </div>
+                <h1 class="text-2xl font-bold text-white mt-2">Universal Document & AI Study Suite</h1>
+                <p class="text-sm text-slate-400 mt-1">View files, AI-ify complex text, generate dedicated summaries, and build exams instantly.</p>
+            </div>
+            <!-- Locked Status Badge -->
+            <div class="flex flex-col items-start md:items-end">
+                <span class="text-xs font-semibold text-slate-300 mb-1">Security Status</span>
+                <div class="px-3 py-1.5 text-xs font-mono text-emerald-400 bg-emerald-950/50 border border-emerald-800 rounded-lg flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>API Secured & Locked</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Upload Section -->
+        <div id="upload-section">
+            <div id="drop-zone" class="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-slate-900/50">
+                <input type="file" id="file-input" class="hidden" accept=".docx,.txt,.md,.json,.pdf,image/*">
+                <div class="flex flex-col items-center justify-center space-y-3">
+                    <svg class="w-12 h-12 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="font-medium text-slate-200">Drag & drop your document or PDF here, or <span class="text-indigo-400 underline">browse</span></p>
+                    <p class="text-xs text-slate-400">Supports Word (.docx), PDFs, Text (.txt), Markdown (.md), and Images</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message Display -->
+        <div id="error-box" class="hidden mt-4 p-4 bg-red-950/50 border border-red-800 text-red-200 text-sm rounded-lg"></div>
+
+        <!-- Workspace Section -->
+        <div id="workspace-section" class="hidden mt-6 space-y-6">
+            
+            <!-- File Info & Mode Switcher Bar -->
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h3 class="font-semibold text-white text-sm" id="meta-name">filename.ext</h3>
+                    <p class="text-xs text-slate-400"><span id="meta-size">0 KB</span> • <span id="meta-type">Type</span></p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="tab-viewer" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all">Document Viewer</button>
+                    <button id="tab-summary" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">AI Summary</button>
+                    <button id="tab-exam" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">AI Exam Generator</button>
+                    <button id="change-file-btn" class="px-3 py-2 text-xs text-red-400 hover:bg-red-950/30 rounded-lg transition-colors">Close File</button>
+                </div>
+            </div>
+
+            <!-- View 1: Document Viewer Container -->
+            <div id="viewer-pane" class="border border-slate-700 rounded-xl bg-slate-900 p-6 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-800/80 p-3 rounded-lg border border-slate-700">
+                    <span class="text-xs text-slate-300 font-medium">Want to make this complex file easier to read through? AI-ify it with tags and structural topics.</span>
+                    <button id="ai-ify-btn" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition-all text-xs flex items-center space-x-2">
+                        <svg class="w-3.5 h-3.5 animate-spin hidden" id="ai-spinner" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="ai-btn-text">AI-ify 😂</span>
+                    </button>
+                </div>
+
+                <div id="viewer-content" class="min-h-[400px] max-h-[600px] overflow-y-auto pr-2 text-slate-200"></div>
+            </div>
+
+            <!-- View 2: AI Summary Container -->
+            <div id="summary-pane" class="hidden border border-slate-700 rounded-xl bg-slate-900 p-6 min-h-[450px]">
+                <div id="summary-intro" class="text-center py-12 space-y-4">
+                    <h3 class="text-xl font-bold text-white">Comprehensive Document Summary</h3>
+                    <p class="text-sm text-slate-400 max-w-md mx-auto">Generate a deep, structural executive summary with core takeaways, topic breakdowns, and key conceptual points.</p>
+                    <button id="generate-summary-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm flex items-center justify-center space-x-2 mx-auto">
+                        <svg class="w-4 h-4 animate-spin hidden" id="summary-spinner" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="summary-btn-text">Generate AI Summary</span>
+                    </button>
+                </div>
+
+                <div id="summary-active-area" class="hidden space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h4 class="font-semibold text-white text-base">Executive Document Summary</h4>
+                        <button id="regen-summary-btn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition-colors">Regenerate Summary</button>
+                    </div>
+                    <div id="summary-content" class="text-slate-200 space-y-4 max-h-[550px] overflow-y-auto pr-2"></div>
+                </div>
+            </div>
+
+            <!-- View 3: AI Exam Container -->
+            <div id="exam-pane" class="hidden border border-slate-700 rounded-xl bg-slate-900 p-6 min-h-[450px]">
+                <div id="exam-intro" class="text-center py-12 space-y-4">
+                    <h3 class="text-xl font-bold text-white">Comprehensive AI Exam Generator</h3>
+                    <p class="text-sm text-slate-400 max-w-md mx-auto">Pungystudio AI will analyze the full document content to generate a complete set of thorough multiple-choice questions covering all sections.</p>
+                    <button id="generate-exam-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm flex items-center justify-center space-x-2 mx-auto">
+                        <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="exam-btn-text">Generate Full Assessment Exam</span>
+                    </button>
+                </div>
+
+                <div id="exam-active-area" class="hidden space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h4 class="font-semibold text-white text-base" id="exam-title-header">Exam Assessment</h4>
+                        <span id="total-questions-badge" class="text-xs bg-indigo-950 text-indigo-300 border border-indigo-800 px-2.5 py-1 rounded-full font-medium"></span>
+                    </div>
+                    <div id="questions-container" class="space-y-6"></div>
+                    <div class="flex justify-end pt-4 border-t border-slate-800">
+                        <button id="submit-exam-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm">Submit Answers</button>
+                    </div>
+                </div>
+
+                <div id="results-area" class="hidden text-center py-8 space-y-3 bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                    <h3 class="text-lg font-bold text-white">Assessment Results</h3>
+                    <div id="score-display" class="text-4xl font-extrabold text-indigo-400">0 / 0</div>
+                    <p id="score-feedback" class="text-sm text-slate-300"></p>
+                    <button id="retake-btn" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg transition-colors">Retake Exam</button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Locked API Key implementation
+        const GEMINI_API_KEY = "AQ.Ab8RN6IUyVtRHg1pbARAfEaxkDskjQf1JOoKRCBJY6u69a9dvw";
+
+        // Robot Verification Logic
+        let expectedRobotAnswer = '';
+        const startVerificationBtn = document.getElementById('start-verification-btn');
+        const robotLoading = document.getElementById('robot-loading');
+        const robotChallengeArea = document.getElementById('robot-challenge-area');
+        const robotModal = document.getElementById('robot-modal');
+
+        startVerificationBtn.addEventListener('click', async () => {
+            robotLoading.classList.remove('hidden');
+            startVerificationBtn.classList.add('hidden');
+
+            try {
+                // Fetch prompt instructions from prompt.txt in the same GitHub repository
+                let promptText = 'Generate a simple human verification math or logic question. Return strictly JSON with keys: "question" (string) and "answer" (string, short lowercase answer).';
+                try {
+                    const txtRes = await fetch('prompt.txt');
+                    if (txtRes.ok) {
+                        promptText = await txtRes.text();
+                    }
+                } catch (err) {
+                    console.log('Using default fallback configuration for verification.');
+                }
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptText }] }]
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to reach AI security service.');
+
+                const data = await response.json();
+                const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!responseText) throw new Error('No verification challenge returned.');
+
+                let cleaned = responseText.trim();
+                if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
+                else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+
+                const challenge = JSON.parse(cleaned);
+                expectedRobotAnswer = String(challenge.answer).trim().toLowerCase();
+
+                robotChallengeArea.innerHTML = `
+                    <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-left space-y-3">
+                        <p class="text-sm font-medium text-slate-200">${challenge.question}</p>
+                        <input type="text" id="robot-answer-input" placeholder="Enter your answer here..." class="w-full px-3 py-2 text-sm bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button id="verify-answer-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 rounded-lg transition-all text-sm shadow">Verify Human</button>
+                        <p id="robot-error" class="text-xs text-red-400 hidden font-medium">Incorrect answer. Please try again.</p>
+                    </div>
+                `;
+
+                document.getElementById('verify-answer-btn').addEventListener('click', () => {
+                    const userVal = document.getElementById('robot-answer-input').value.trim().toLowerCase();
+                    if (userVal === expectedRobotAnswer) {
+                        robotModal.classList.add('hidden');
+                    } else {
+                        document.getElementById('robot-error').classList.remove('hidden');
+                    }
+                });
+
+            } catch (err) {
+                robotChallengeArea.innerHTML = `
+                    <p class="text-xs text-red-400 mb-2">Verification Error: ${err.message}</p>
+                    <button onclick="location.reload()" class="w-full bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded-lg">Retry Verification</button>
+                `;
+            } finally {
+                robotLoading.classList.add('hidden');
+            }
+        });
+
+        // App Workspace Logic
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const uploadSection = document.getElementById('upload-section');
+        const workspaceSection = document.getElementById('workspace-section');
+        const errorBox = document.getElementById('error-box');
+        
+        const metaName = document.getElementById('meta-name');
+        const metaSize = document.getElementById('meta-size');
+        const metaType = document.getElementById('meta-type');
+        const changeFileBtn = document.getElementById('change-file-btn');
+
+        const tabViewer = document.getElementById('tab-viewer');
+        const tabSummary = document.getElementById('tab-summary');
+        const tabExam = document.getElementById('tab-exam');
+        const viewerPane = document.getElementById('viewer-pane');
+        const summaryPane = document.getElementById('summary-pane');
+        const examPane = document.getElementById('exam-pane');
+
+        const aiIfyBtn = document.getElementById('ai-ify-btn');
+        const aiSpinner = document.getElementById('ai-spinner');
+        const aiBtnText = document.getElementById('ai-btn-text');
+        const viewerContent = document.getElementById('viewer-content');
+
+        const generateSummaryBtn = document.getElementById('generate-summary-btn');
+        const summarySpinner = document.getElementById('summary-spinner');
+        const summaryBtnText = document.getElementById('summary-btn-text');
+        const summaryIntro = document.getElementById('summary-intro');
+        const summaryActiveArea = document.getElementById('summary-active-area');
+        const summaryContent = document.getElementById('summary-content');
+        const regenSummaryBtn = document.getElementById('regen-summary-btn');
+
+        const generateExamBtn = document.getElementById('generate-exam-btn');
+        const examSpinner = document.getElementById('exam-spinner');
+        const examBtnText = document.getElementById('exam-btn-text');
+        const examIntro = document.getElementById('exam-intro');
+        const examActiveArea = document.getElementById('exam-active-area');
+        const questionsContainer = document.getElementById('questions-container');
+        const totalQuestionsBadge = document.getElementById('total-questions-badge');
+        const submitExamBtn = document.getElementById('submit-exam-btn');
+        const resultsArea = document.getElementById('results-area');
+        const scoreDisplay = document.getElementById('score-display');
+        const scoreFeedback = document.getElementById('score-feedback');
+        const retakeBtn = document.getElementById('retake-btn');
+
+        let rawFileText = '';
+        let originalViewerHtml = '';
+        let quizData = [];
+        let userAnswers = {};
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-indigo-500', 'bg-slate-800');
+            });
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-indigo-500', 'bg-slate-800');
+            });
+        });
+        dropZone.addEventListener('drop', (e) => {
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        changeFileBtn.addEventListener('click', resetWorkspace);
+        
+        function switchTab(activeTab) {
+            [tabViewer, tabSummary, tabExam].forEach(t => t.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all');
+            [viewerPane, summaryPane, examPane].forEach(p => p.classList.add('hidden'));
+
+            if (activeTab === 'viewer') {
+                tabViewer.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all';
+                viewerPane.classList.remove('hidden');
+            } else if (activeTab === 'summary') {
+                tabSummary.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all';
+                summaryPane.classList.remove('hidden');
+            } else if (activeTab === 'exam') {
+                tabExam.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all';
+                examPane.classList.remove('hidden');
+            }
+        }
+
+        tabViewer.addEventListener('click', () => switchTab('viewer'));
+        tabSummary.addEventListener('click', () => switchTab('summary'));
+        tabExam.addEventListener('click', () => switchTab('exam'));
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showError(msg) {
+            errorBox.textContent = msg;
+            errorBox.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorBox.classList.add('hidden');
+        }
+
+        function resetWorkspace() {
+            workspaceSection.classList.add('hidden');
+            uploadSection.classList.remove('hidden');
+            fileInput.value = '';
+            rawFileText = '';
+            originalViewerHtml = '';
+            quizData = [];
+            userAnswers = {};
+            summaryIntro.classList.remove('hidden');
+            summaryActiveArea.classList.add('hidden');
+            examIntro.classList.remove('hidden');
+            examActiveArea.classList.add('hidden');
+            resultsArea.classList.add('hidden');
+            hideError();
+        }
+
+        function handleFile(file) {
+            hideError();
+            if (!file) return;
+
+            metaName.textContent = file.name;
+            metaSize.textContent = formatBytes(file.size);
+            metaType.textContent = file.type || 'Binary / Unknown';
+
+            const extension = file.name.split('.').pop().toLowerCase();
+
+            if (extension === 'docx') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    mammoth.convertToHtml({ arrayBuffer: e.target.result })
+                        .then(result => {
+                            originalViewerHtml = `<div class="prose prose-invert max-w-none">${result.value}</div>`;
+                            viewerContent.innerHTML = originalViewerHtml;
+                            const temp = document.createElement('div');
+                            temp.innerHTML = result.value;
+                            rawFileText = temp.textContent || temp.innerText || '';
+                            showWorkspace();
+                        })
+                        .catch(err => showError('Error parsing Word document: ' + err.message));
+                };
+                reader.readAsArrayBuffer(file);
+                return;
+            }
+
+            if (['txt', 'md', 'json', 'js', 'html', 'css', 'csv', 'log'].includes(extension) || file.type.startsWith('text/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    rawFileText = e.target.result;
+                    originalViewerHtml = `<pre class="font-mono text-xs text-slate-200 whitespace-pre-wrap">${escapeHtml(rawFileText)}</pre>`;
+                    viewerContent.innerHTML = originalViewerHtml;
+                    showWorkspace();
+                };
+                reader.readAsText(file);
+                return;
+            }
+
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension) || file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    rawFileText = `[Uploaded Image: ${file.name}]`;
+                    originalViewerHtml = `<div class="flex justify-center"><img src="${e.target.result}" class="max-h-[500px] object-contain rounded-lg"></div>`;
+                    viewerContent.innerHTML = originalViewerHtml;
+                    showWorkspace();
+                };
+                reader.readAsDataURL(file);
+                return;
+            }
+
+            if (extension === 'pdf' || file.type === 'application/pdf') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    rawFileText = `[PDF Document: ${file.name}]`;
+                    originalViewerHtml = `<iframe src="${e.target.result}" class="w-full h-[500px] border-0 rounded-lg"></iframe>`;
+                    viewerContent.innerHTML = originalViewerHtml;
+                    showWorkspace();
+                };
+                reader.readAsDataURL(file);
+                return;
+            }
+
+            showError('Unsupported file format selected. Please upload a .docx, PDF, text, or image file.');
+        }
+
+        function showWorkspace() {
+            uploadSection.classList.add('hidden');
+            workspaceSection.classList.remove('hidden');
+            switchTab('viewer');
+        }
+
+        aiIfyBtn.addEventListener('click', async () => {
+            hideError();
+            aiSpinner.classList.remove('hidden');
+            aiBtnText.textContent = 'AI-ifying...';
+            aiIfyBtn.disabled = true;
+
+            try {
+                const prompt = `You are an expert document organizer and tutor. Analyze the following complex document text and restructure it to make it exceptionally easy to read through. 
+Add clear topics, sub-topics, section headings, and semantic inline tags. Return your response formatted cleanly in Tailwind CSS HTML classes.
+
+Document Context:
+${rawFileText.substring(0, 20000)}`;
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                if (!response.ok) {
+                    const errRes = await response.json();
+                    throw new Error(errRes.error?.message || 'API request failed');
+                }
+
+                const data = await response.json();
+                const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!responseText) throw new Error('No content returned from AI model.');
+
+                let cleaned = responseText.trim();
+                if (cleaned.startsWith('```html')) cleaned = cleaned.replace(/^```html/, '').replace(/```$/, '').trim();
+                else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+
+                viewerContent.innerHTML = `
+                    <div class="mb-4 flex items-center justify-between text-xs text-indigo-400 font-medium bg-indigo-950/40 border border-indigo-900 p-2 rounded-lg">
+                        <span>✨ Document successfully AI-ified with topics, sub-topics & tags!</span>
+                        <button id="revert-view-btn" class="underline text-slate-300 hover:text-white">Show Original</button>
+                    </div>
+                    <div class="space-y-4">${cleaned}</div>
+                `;
+
+                document.getElementById('revert-view-btn').addEventListener('click', () => {
+                    viewerContent.innerHTML = originalViewerHtml;
+                });
+
+            } catch (err) {
+                showError('AI-ify Error: ' + err.message);
+            } finally {
+                aiSpinner.classList.add('hidden');
+                aiBtnText.textContent = 'AI-ify 😂';
+                aiIfyBtn.disabled = false;
+            }
+        });
+
+        async function runSummaryGeneration() {
+            hideError();
+            summarySpinner.classList.remove('hidden');
+            summaryBtnText.textContent = 'Generating Summary...';
+            generateSummaryBtn.disabled = true;
+
+            try {
+                const prompt = `You are an expert researcher and academic analyst. Provide a comprehensive, structured executive summary of the following document text. 
+Include Executive Overview, Core Key Takeaways, Main Subject Breakdowns, and Conclusion. Format cleanly in Tailwind CSS HTML classes.
+
+Document Context:
+${rawFileText.substring(0, 25000)}`;
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                if (!response.ok) {
+                    const errRes = await response.json();
+                    throw new Error(errRes.error?.message || 'API call failed');
+                }
+
+                const data = await response.json();
+                const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!responseText) throw new Error('No content returned from AI model.');
+
+                let cleaned = responseText.trim();
+                if (cleaned.startsWith('```html')) cleaned = cleaned.replace(/^```html/, '').replace(/```$/, '').trim();
+                else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+
+                summaryContent.innerHTML = cleaned;
+                summaryIntro.classList.add('hidden');
+                summaryActiveArea.classList.remove('hidden');
+
+            } catch (err) {
+                showError('Summary Generation error: ' + err.message);
+            } finally {
+                summarySpinner.classList.add('hidden');
+                summaryBtnText.textContent = 'Generate AI Summary';
+                generateSummaryBtn.disabled = false;
+            }
+        }
+
+        generateSummaryBtn.addEventListener('click', runSummaryGeneration);
+        regenSummaryBtn.addEventListener('click', runSummaryGeneration);
+
+        generateExamBtn.addEventListener('click', async () => {
+            hideError();
+            examSpinner.classList.remove('hidden');
+            examBtnText.textContent = 'Generating All Questions...';
+            generateExamBtn.disabled = true;
+
+            try {
+                const prompt = `You are an expert professor. Based on the document context, generate between 10 to 25 multiple-choice questions. 
+Return your response EXCLUSIVELY as a valid JSON array of objects with keys: "question", "options" (array of 4 choices), "answer", and "explanation".
+
+Document Context:
+${rawFileText.substring(0, 25000)}`;
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                if (!response.ok) {
+                    const errRes = await response.json();
+                    throw new Error(errRes.error?.message || 'API call failed');
+                }
+
+                const data = await response.json();
+                const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!responseText) throw new Error('No content returned from AI model.');
+
+                let cleaned = responseText.trim();
+                if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
+                else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+
+                quizData = JSON.parse(cleaned);
+                renderExamQuestions();
+
+            } catch (err) {
+                showError('Exam Generation error: ' + err.message);
+            } finally {
+                examSpinner.classList.add('hidden');
+                examBtnText.textContent = 'Generate Full Assessment Exam';
+                generateExamBtn.disabled = false;
+            }
+        });
+
+        function renderExamQuestions() {
+            questionsContainer.innerHTML = '';
+            userAnswers = {};
+
+            totalQuestionsBadge.textContent = `${quizData.length} Questions Generated`;
+
+            quizData.forEach((q, qIndex) => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-800/80 border border-slate-700 p-5 rounded-xl space-y-3';
+                
+                let optsHtml = '';
+                q.options.forEach(opt => {
+                    optsHtml += `
+                        <label class="flex items-start space-x-3 p-3 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 cursor-pointer transition-colors">
+                            <input type="radio" name="q-${qIndex}" value="${opt}" class="mt-1 text-indigo-500 focus:ring-indigo-500" onchange="storeChoice(${qIndex}, '${opt.replace(/'/g, "\\'")}')">
+                            <span class="text-sm text-slate-200">${opt}</span>
+                        </label>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <p class="font-semibold text-white text-base">Q${qIndex + 1}. ${q.question}</p>
+                    <div class="space-y-2 mt-2">${optsHtml}</div>
+                    <div id="expl-${qIndex}" class="hidden text-xs mt-3 p-3 rounded-lg bg-indigo-950/60 border border-indigo-800 text-indigo-200">
+                        <span class="font-semibold">Explanation:</span> ${q.explanation}
+                    </div>
+                `;
+                questionsContainer.appendChild(card);
+            });
+
+            examIntro.classList.add('hidden');
+            examActiveArea.classList.remove('hidden');
+        }
+
+        window.storeChoice = function(qIndex, val) {
+            userAnswers[qIndex] = val;
+        }
+
+        submitExamBtn.addEventListener('click', () => {
+            if (Object.keys(userAnswers).length < quizData.length) {
+                if (!confirm('You have unanswered questions. Do you still wish to submit?')) return;
+            }
+
+            let score = 0;
+            quizData.forEach((q, idx) => {
+                const chosen = userAnswers[idx];
+                const card = questionsContainer.children[idx];
+                const expl = document.getElementById(`expl-${idx}`);
+                expl.classList.remove('hidden');
+
+                card.querySelectorAll(`input[name="q-${idx}"]`).forEach(inp => {
+                    inp.disabled = true;
+                    const parent = inp.parentElement;
+                    if (inp.value === q.answer) {
+                        parent.className = 'flex items-start space-x-3 p-3 rounded-lg border border-emerald-600 bg-emerald-950/50 text-emerald-200';
+                    } else if (inp.checked && inp.value !== q.answer) {
+                        parent.className = 'flex items-start space-x-3 p-3 rounded-lg border border-red-600 bg-red-950/50 text-red-200';
+                    }
+                });
+
+                if (chosen === q.answer) score++;
+            });
+
+            submitExamBtn.classList.add('hidden');
+            scoreDisplay.textContent = `${score} / ${quizData.length}`;
+            
+            const ratio = score / quizData.length;
+            if (ratio === 1) scoreFeedback.textContent = 'Flawless performance! Full marks achieved.';
+            else if (ratio >= 0.7) scoreFeedback.textContent = 'Great proficiency demonstrated on this material.';
+            else scoreFeedback.textContent = 'Good effort. Review the explanations above to strengthen your mastery.';
+
+            resultsArea.classList.remove('hidden');
+            resultsArea.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        retakeBtn.addEventListener('click', () => {
+            resultsArea.classList.add('hidden');
+            submitExamBtn.classList.remove('hidden');
+            renderExamQuestions();
+        });
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
