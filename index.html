@@ -1,459 +1,1081 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pungystudio AI - Verification Suite</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Mammoth.js for .docx parsing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pungystudio AI – Verified Document Suite</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <style>
+    /* Base theme variables – adapt to system preference */
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #0f172a / 0.7;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --border-color: #334155;
+      --glass-bg: rgba(15, 23, 42, 0.7);
+      --glass-border: rgba(99, 102, 241, 0.2);
+      --card-bg: #1e293b / 0.5;
+      --correct-bg: rgba(16, 185, 129, 0.15);
+      --wrong-bg: rgba(239, 68, 68, 0.15);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-primary: #f1f5f9;
+        --bg-secondary: #e2e8f0;
+        --bg-card: #ffffff / 0.8;
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --border-color: #cbd5e1;
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(99, 102, 241, 0.3);
+        --card-bg: #ffffff / 0.8;
+        --correct-bg: rgba(16, 185, 129, 0.2);
+        --wrong-bg: rgba(239, 68, 68, 0.2);
+      }
+    }
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .correct-answer {
+      border-color: #10b981 !important;
+      background: var(--correct-bg) !important;
+    }
+    .wrong-answer {
+      border-color: #ef4444 !important;
+      background: var(--wrong-bg) !important;
+    }
+    .quiz-card {
+      transition: all 0.2s ease;
+    }
+    .border-slate-700 {
+      border-color: var(--border-color);
+    }
+    .bg-slate-800 {
+      background-color: var(--bg-secondary);
+    }
+    .bg-slate-900 {
+      background-color: var(--bg-primary);
+    }
+    .bg-slate-900/50 {
+      background-color: var(--bg-primary) / 0.5;
+    }
+    .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-100 {
+      color: var(--text-primary);
+    }
+    .text-slate-400 {
+      color: var(--text-secondary);
+    }
+    .bg-slate-700 {
+      background-color: var(--bg-secondary);
+    }
+    .bg-slate-800/80 {
+      background-color: var(--bg-secondary) / 0.8;
+    }
+    .bg-slate-800/50 {
+      background-color: var(--bg-secondary) / 0.5;
+    }
+    .bg-slate-900/80 {
+      background-color: var(--bg-primary) / 0.8;
+    }
+    .border-slate-700\/50 {
+      border-color: var(--border-color) / 0.5;
+    }
+    .border-slate-700 {
+      border-color: var(--border-color);
+    }
+    .hover\:border-indigo-500\/50:hover {
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+    .bg-slate-800\/50 {
+      background-color: var(--bg-secondary) / 0.5;
+    }
+    .bg-slate-800\/80 {
+      background-color: var(--bg-secondary) / 0.8;
+    }
+    .bg-slate-700 {
+      background-color: var(--bg-secondary);
+    }
+    .bg-slate-800 {
+      background-color: var(--bg-secondary);
+    }
+    .bg-slate-900 {
+      background-color: var(--bg-primary);
+    }
+    .bg-slate-900\/50 {
+      background-color: var(--bg-primary) / 0.5;
+    }
+    /* Override for status badges */
+    .bg-slate-700 {
+      background-color: var(--bg-secondary);
+    }
+    .text-slate-400 {
+      color: var(--text-secondary);
+    }
+    .text-slate-300 {
+      color: var(--text-secondary);
+    }
+    .text-slate-200 {
+      color: var(--text-primary);
+    }
+    .text-slate-100 {
+      color: var(--text-primary);
+    }
+    /* Ensure correct contrast for light mode */
+    @media (prefers-color-scheme: light) {
+      .bg-slate-800\/50 {
+        background-color: rgba(255, 255, 255, 0.5);
+      }
+      .bg-slate-800\/80 {
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+      .bg-slate-700 {
+        background-color: #e2e8f0;
+      }
+      .bg-slate-800 {
+        background-color: #f1f5f9;
+      }
+      .bg-slate-900 {
+        background-color: #f8fafc;
+      }
+      .bg-slate-900\/50 {
+        background-color: rgba(248, 250, 252, 0.5);
+      }
+      .bg-slate-800\/80 {
+        background-color: rgba(241, 245, 249, 0.8);
+      }
+      .border-slate-700 {
+        border-color: #cbd5e1;
+      }
+      .border-slate-700\/50 {
+        border-color: #cbd5e1 / 0.5;
+      }
+      .text-slate-400 {
+        color: #475569;
+      }
+      .text-slate-300 {
+        color: #475569;
+      }
+      .text-slate-200 {
+        color: #0f172a;
+      }
+      .text-slate-100 {
+        color: #0f172a;
+      }
+      .bg-slate-700 {
+        background-color: #e2e8f0;
+      }
+      .bg-slate-800 {
+        background-color: #f1f5f9;
+      }
+      .bg-slate-900 {
+        background-color: #f8fafc;
+      }
+      .bg-slate-900\/50 {
+        background-color: rgba(248, 250, 252, 0.5);
+      }
+      .bg-slate-800\/80 {
+        background-color: rgba(241, 245, 249, 0.8);
+      }
+      .bg-slate-900\/80 {
+        background-color: rgba(248, 250, 252, 0.8);
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.7);
+        border-color: rgba(99, 102, 241, 0.3);
+      }
+      .bg-indigo-950\/60 {
+        background-color: rgba(99, 102, 241, 0.1);
+      }
+      .border-indigo-800 {
+        border-color: rgba(99, 102, 241, 0.3);
+      }
+      .text-indigo-300 {
+        color: #6366f1;
+      }
+      .bg-indigo-950\/40 {
+        background-color: rgba(99, 102, 241, 0.1);
+      }
+      .border-indigo-900 {
+        border-color: rgba(99, 102, 241, 0.3);
+      }
+      .bg-red-950\/50 {
+        background-color: rgba(239, 68, 68, 0.1);
+      }
+      .border-red-800 {
+        border-color: #ef4444;
+      }
+      .text-red-200 {
+        color: #ef4444;
+      }
+      .bg-slate-800\/80 {
+        background-color: rgba(241, 245, 249, 0.8);
+      }
+      .border-slate-700 {
+        border-color: #cbd5e1;
+      }
+      .bg-slate-800\/50 {
+        background-color: rgba(241, 245, 249, 0.5);
+      }
+      .bg-slate-800\/80 {
+        background-color: rgba(241, 245, 249, 0.8);
+      }
+      .bg-slate-800\/50 {
+        background-color: rgba(241, 245, 249, 0.5);
+      }
+    }
+  </style>
 </head>
-<body class="bg-slate-900 min-h-screen text-slate-100 flex flex-col items-center justify-center py-8 px-4">
+<body class="min-h-screen flex flex-col items-center py-6 px-4">
 
-    <!-- Step 1: Config Setup Screen -->
-    <div id="config-screen" class="w-full max-w-md bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 p-6 md:p-8 space-y-6">
-        <div class="text-center space-y-2">
-            <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">System Gate</span>
-            <h2 class="text-xl font-bold text-white mt-1">Pungystudio AI</h2>
-            <p class="text-xs text-slate-400">System securely fetches credentials from JSONBin and dynamically generates an entry challenge.</p>
+  <div class="w-full max-w-5xl">
+
+    <!-- HEADER with Refresh Rate -->
+    <header class="flex items-center justify-between mb-6">
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Pungystudio AI</span>
+          <span class="text-xs text-slate-400 font-mono">v4.3</span>
         </div>
+        <h1 class="text-2xl font-bold text-white mt-1">Document & AI Study Suite</h1>
+      </div>
+      <div class="flex items-center space-x-4">
+        <!-- Refresh Rate -->
+        <span id="refresh-rate" class="text-xs text-slate-400 bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700">
+          <span id="hz-value">--</span>Hz
+        </span>
+        <!-- Status -->
+        <span id="status-badge" class="flex items-center space-x-2 text-xs bg-slate-700 rounded-full px-3 py-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" id="status-dot"></span>
+          <span id="status-text">Loading...</span>
+        </span>
+      </div>
+    </header>
 
-        <div class="space-y-4">
-            <div id="config-error" class="hidden text-xs text-red-400 bg-red-950/50 border border-red-800 p-2.5 rounded-lg"></div>
-            <button id="load-challenge-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow transition-all text-sm flex items-center justify-center space-x-2">
-                <svg class="w-4 h-4 animate-spin hidden" id="config-spinner" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span id="load-btn-text">Initialize & Generate Challenge</span>
+    <!-- LANDING PAGE (always visible first) -->
+    <div id="landing-page" class="glass rounded-2xl p-8 md:p-12 text-center border border-indigo-500/20 shadow-xl">
+      <div class="max-w-3xl mx-auto">
+        <h2 class="text-4xl md:text-5xl font-extrabold gradient-text">Welcome to Pungystudio AI</h2>
+        <p class="text-slate-300 text-lg mt-3">Intelligent document processing, powered by Gemini 3.6 Flash</p>
+        <div class="grid md:grid-cols-3 gap-4 mt-8 text-left">
+          <div class="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-indigo-500/50 transition-all">
+            <div class="text-3xl mb-2">✨</div>
+            <h3 class="font-bold text-white">AI‑ify</h3>
+            <p class="text-xs text-slate-400 mt-1">Transform complex text into structured, tagged content.</p>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-indigo-500/50 transition-all">
+            <div class="text-3xl mb-2">📄</div>
+            <h3 class="font-bold text-white">Smart Summary</h3>
+            <p class="text-xs text-slate-400 mt-1">Get an executive summary with key takeaways.</p>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-indigo-500/50 transition-all">
+            <div class="text-3xl mb-2">📝</div>
+            <h3 class="font-bold text-white">Exam Generator</h3>
+            <p class="text-xs text-slate-400 mt-1">Auto‑generate multiple‑choice assessments.</p>
+          </div>
+        </div>
+        <button id="get-started-btn" class="mt-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-10 rounded-xl shadow-lg transition-all text-lg">
+          Get Started 🚀
+        </button>
+        <p class="text-xs text-slate-400 mt-3" id="landing-subtext">You'll answer 10 computer‑abbreviation questions – need 5 correct to unlock.</p>
+      </div>
+    </div>
+
+    <!-- VERIFICATION QUIZ (hidden by default) -->
+    <div id="verification-overlay" class="hidden glass rounded-2xl p-6 md:p-8 mt-6 border border-indigo-500/30">
+      <div class="flex items-center gap-3 mb-6">
+        <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+        <h2 class="text-xl font-bold text-white">Human Verification</h2>
+        <span class="ml-auto text-xs text-indigo-300 bg-indigo-950/60 px-3 py-1 rounded-full border border-indigo-800">Pungystudio AI</span>
+      </div>
+      <p class="text-sm text-slate-300 mb-4">Answer the following 10 computer‑related questions. Each answer is checked instantly. You need <span class="font-semibold text-indigo-400">5 correct</span> to unlock.</p>
+      <div class="w-full bg-slate-700 rounded-full h-2.5 mb-6">
+        <div id="progress-fill" class="bg-indigo-500 h-2.5 rounded-full transition-all duration-300" style="width:0%"></div>
+      </div>
+      <div id="quiz-container" class="space-y-4"></div>
+      <div id="verification-result" class="mt-6 text-sm font-semibold text-center"></div>
+      <button id="retry-verification-btn" class="hidden mt-4 text-xs text-slate-400 hover:text-white underline mx-auto block">Generate new quiz & retry</button>
+    </div>
+
+    <!-- MAIN WORKSPACE (hidden until verified & clicked) -->
+    <div id="main-workspace" class="hidden mt-6">
+      <!-- Upload -->
+      <div id="upload-section">
+        <div id="drop-zone" class="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-slate-900/50">
+          <input type="file" id="file-input" class="hidden" accept=".docx,.txt,.md,.json,.pdf,image/*" />
+          <div class="flex flex-col items-center justify-center space-y-3">
+            <svg class="w-12 h-12 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.707.293V19a2 2 0 01-2 2z"/>
+            </svg>
+            <p class="font-medium text-slate-200">Drag & drop your document or PDF here, or <span class="text-indigo-400 underline">browse</span></p>
+            <p class="text-xs text-slate-400">Supports Word (.docx), PDFs, Text (.txt), Markdown (.md), and Images</p>
+          </div>
+        </div>
+      </div>
+      <!-- Error -->
+      <div id="error-box" class="hidden mt-4 p-4 bg-red-950/50 border border-red-800 text-red-200 text-sm rounded-lg"></div>
+      <!-- Workspace -->
+      <div id="workspace-section" class="hidden mt-6 space-y-6">
+        <!-- File bar -->
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="font-semibold text-white text-sm" id="meta-name">filename.ext</h3>
+            <p class="text-xs text-slate-400"><span id="meta-size">0 KB</span> • <span id="meta-type">Type</span></p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="tab-viewer" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white">Document Viewer</button>
+            <button id="tab-summary" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">AI Summary</button>
+            <button id="tab-exam" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">AI Exam Generator</button>
+            <button id="change-file-btn" class="px-3 py-2 text-xs text-red-400 hover:bg-red-950/30 rounded-lg">Close File</button>
+          </div>
+        </div>
+        <!-- Viewer -->
+        <div id="viewer-pane" class="border border-slate-700 rounded-xl bg-slate-900 p-6 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-800/80 p-3 rounded-lg border border-slate-700">
+            <span class="text-xs text-slate-300 font-medium">Want to make this complex file easier? AI‑ify it with tags and structure.</span>
+            <button id="ai-ify-btn" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition-all text-xs flex items-center space-x-2">
+              <svg class="w-3.5 h-3.5 animate-spin hidden" id="ai-spinner" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span id="ai-btn-text">AI-ify 😂</span>
             </button>
+          </div>
+          <div id="viewer-content" class="min-h-[400px] max-h-[600px] overflow-y-auto pr-2 text-slate-200"></div>
         </div>
+        <!-- Summary -->
+        <div id="summary-pane" class="hidden border border-slate-700 rounded-xl bg-slate-900 p-6 min-h-[450px]">
+          <div id="summary-intro" class="text-center py-12 space-y-4">
+            <h3 class="text-xl font-bold text-white">Comprehensive Document Summary</h3>
+            <p class="text-sm text-slate-400 max-w-md mx-auto">Generate a deep, structural executive summary with core takeaways and topic breakdowns.</p>
+            <button id="generate-summary-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm flex items-center justify-center space-x-2 mx-auto">
+              <svg class="w-4 h-4 animate-spin hidden" id="summary-spinner" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span id="summary-btn-text">Generate AI Summary</span>
+            </button>
+          </div>
+          <div id="summary-active-area" class="hidden space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h4 class="font-semibold text-white text-base">Executive Document Summary</h4>
+              <button id="regen-summary-btn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg">Regenerate Summary</button>
+            </div>
+            <div id="summary-content" class="text-slate-200 space-y-4 max-h-[550px] overflow-y-auto pr-2"></div>
+          </div>
+        </div>
+        <!-- Exam -->
+        <div id="exam-pane" class="hidden border border-slate-700 rounded-xl bg-slate-900 p-6 min-h-[450px]">
+          <div id="exam-intro" class="text-center py-12 space-y-4">
+            <h3 class="text-xl font-bold text-white">Comprehensive AI Exam Generator</h3>
+            <p class="text-sm text-slate-400 max-w-md mx-auto">Pungystudio AI will analyze the full document to generate a complete set of thorough multiple‑choice questions.</p>
+            <button id="generate-exam-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm flex items-center justify-center space-x-2 mx-auto">
+              <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span id="exam-btn-text">Generate Full Assessment Exam</span>
+            </button>
+          </div>
+          <div id="exam-active-area" class="hidden space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h4 class="font-semibold text-white text-base" id="exam-title-header">Exam Assessment</h4>
+              <span id="total-questions-badge" class="text-xs bg-indigo-950 text-indigo-300 border border-indigo-800 px-2.5 py-1 rounded-full font-medium"></span>
+            </div>
+            <div id="questions-container" class="space-y-6"></div>
+            <div class="flex justify-end pt-4 border-t border-slate-800">
+              <button id="submit-exam-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm">Submit Answers</button>
+            </div>
+          </div>
+          <div id="results-area" class="hidden text-center py-8 space-y-3 bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+            <h3 class="text-lg font-bold text-white">Assessment Results</h3>
+            <div id="score-display" class="text-4xl font-extrabold text-indigo-400">0 / 0</div>
+            <p id="score-feedback" class="text-sm text-slate-300"></p>
+            <button id="retake-btn" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg">Retake Exam</button>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Step 2: AI Verification Challenge Screen -->
-    <div id="verification-screen" class="w-full max-w-2xl bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 p-6 md:p-8 space-y-6 hidden">
-        <div class="text-center space-y-2">
-            <span class="bg-purple-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Computer Literacy Check</span>
-            <h2 class="text-xl font-bold text-white mt-1">Acronym Verification Challenge</h2>
-            <p class="text-xs text-slate-400">Score at least 50% to unlock the main application.</p>
-        </div>
+  <script>
+    // ================================================================
+    // Pungystudio AI – Instant verification status, background API load
+    // Uses Gemini 3.6 Flash, JSON Bin, localStorage
+    // ================================================================
 
-        <div id="verification-questions-container" class="space-y-4 max-h-[500px] overflow-y-auto pr-1"></div>
-        
-        <div id="verification-results" class="hidden text-center p-4 rounded-xl border space-y-2">
-            <div id="verification-score-text" class="text-2xl font-bold"></div>
-            <p id="verification-feedback-text" class="text-sm"></p>
-        </div>
+    const JSON_BIN_ID = '6a7a4f06da38895dfed2f54d';
+    const JSON_BIN_MASTER_KEY = '$2a$10$ZNYJ5U7gGnDHeybG36ceCuxDwOrFwbogNGd7pytNwPwMaIsmuaEb.';
 
-        <div class="flex space-x-3">
-            <button id="submit-verification-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg shadow transition-all text-sm">Submit Answers</button>
-            <button id="proceed-app-btn" class="hidden w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow transition-all text-sm">Unlock Application</button>
-            <button id="retry-verification-btn" class="hidden w-full bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2.5 rounded-lg shadow transition-all text-sm">Retry Challenge</button>
-        </div>
-    </div>
+    // DOM refs
+    const landingPage = document.getElementById('landing-page');
+    const getStartedBtn = document.getElementById('get-started-btn');
+    const landingSubtext = document.getElementById('landing-subtext');
+    const verificationOverlay = document.getElementById('verification-overlay');
+    const quizContainer = document.getElementById('quiz-container');
+    const verificationResult = document.getElementById('verification-result');
+    const retryVerificationBtn = document.getElementById('retry-verification-btn');
+    const mainWorkspace = document.getElementById('main-workspace');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const progressFill = document.getElementById('progress-fill');
+    const hzValue = document.getElementById('hz-value');
 
-    <!-- Main Application Container -->
-    <div id="main-app-container" class="w-full max-w-5xl bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 p-6 md:p-8 hidden">
-        <!-- Brand Header -->
-        <header class="mb-6 border-b border-slate-700 pb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-                <div class="flex items-center space-x-2">
-                    <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Pungystudio AI</span>
-                    <span class="text-xs text-emerald-400 font-mono font-semibold">v4.0 Pro (Unlocked)</span>
-                </div>
-                <h1 class="text-2xl font-bold text-white mt-2">Universal Document & AI Study Suite</h1>
-            </div>
-            <button id="lock-app-btn" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded-lg transition-colors self-start md:self-auto">Lock Session</button>
-        </header>
+    // All other DOM refs (same as before)
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const uploadSection = document.getElementById('upload-section');
+    const workspaceSection = document.getElementById('workspace-section');
+    const errorBox = document.getElementById('error-box');
+    const metaName = document.getElementById('meta-name');
+    const metaSize = document.getElementById('meta-size');
+    const metaType = document.getElementById('meta-type');
+    const changeFileBtn = document.getElementById('change-file-btn');
+    const tabViewer = document.getElementById('tab-viewer');
+    const tabSummary = document.getElementById('tab-summary');
+    const tabExam = document.getElementById('tab-exam');
+    const viewerPane = document.getElementById('viewer-pane');
+    const summaryPane = document.getElementById('summary-pane');
+    const examPane = document.getElementById('exam-pane');
+    const aiIfyBtn = document.getElementById('ai-ify-btn');
+    const aiSpinner = document.getElementById('ai-spinner');
+    const aiBtnText = document.getElementById('ai-btn-text');
+    const viewerContent = document.getElementById('viewer-content');
+    const generateSummaryBtn = document.getElementById('generate-summary-btn');
+    const summarySpinner = document.getElementById('summary-spinner');
+    const summaryBtnText = document.getElementById('summary-btn-text');
+    const summaryIntro = document.getElementById('summary-intro');
+    const summaryActiveArea = document.getElementById('summary-active-area');
+    const summaryContent = document.getElementById('summary-content');
+    const regenSummaryBtn = document.getElementById('regen-summary-btn');
+    const generateExamBtn = document.getElementById('generate-exam-btn');
+    const examSpinner = document.getElementById('exam-spinner');
+    const examBtnText = document.getElementById('exam-btn-text');
+    const examIntro = document.getElementById('exam-intro');
+    const examActiveArea = document.getElementById('exam-active-area');
+    const questionsContainer = document.getElementById('questions-container');
+    const totalQuestionsBadge = document.getElementById('total-questions-badge');
+    const submitExamBtn = document.getElementById('submit-exam-btn');
+    const resultsArea = document.getElementById('results-area');
+    const scoreDisplay = document.getElementById('score-display');
+    const scoreFeedback = document.getElementById('score-feedback');
+    const retakeBtn = document.getElementById('retake-btn');
 
-        <!-- Upload Section -->
-        <div id="upload-section">
-            <div id="drop-zone" class="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-slate-900/50">
-                <input type="file" id="file-input" class="hidden" accept=".docx,.txt,.md,.json,.pdf,image/*">
-                <div class="flex flex-col items-center justify-center space-y-3">
-                    <svg class="w-12 h-12 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <p class="font-medium text-slate-200">Drag & drop your document or PDF here, or <span class="text-indigo-400 underline">browse</span></p>
-                </div>
-            </div>
-        </div>
+    // Global state
+    let geminiApiKey = '';
+    let isVerified = false;
+    let alreadyVerified = false;
+    let rawFileText = '';
+    let originalViewerHtml = '';
+    let quizData = [];
+    let userAnswers = {};
+    let verificationQuestions = [];
+    let verificationScore = 0;
+    let answeredCount = 0;
+    let quizLocked = false;
 
-        <!-- Error Message Display -->
-        <div id="error-box" class="hidden mt-4 p-4 bg-red-950/50 border border-red-800 text-red-200 text-sm rounded-lg"></div>
-
-        <!-- Workspace Section -->
-        <div id="workspace-section" class="hidden mt-6 space-y-6">
-            <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h3 class="font-semibold text-white text-sm" id="meta-name">filename.ext</h3>
-                    <p class="text-xs text-slate-400"><span id="meta-size">0 KB</span> • <span id="meta-type">Type</span></p>
-                </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <button id="tab-viewer" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all">Document Viewer</button>
-                    <button id="tab-summary" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">AI Summary</button>
-                    <button id="tab-exam" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">AI Exam Generator</button>
-                    <button id="change-file-btn" class="px-3.5 py-2 text-xs text-red-400 hover:bg-red-950/30 rounded-lg transition-colors">Close File</button>
-                </div>
-            </div>
-
-            <!-- View 1: Document Viewer Container -->
-            <div id="viewer-pane" class="border border-slate-700 rounded-xl bg-slate-900 p-6 space-y-4">
-                <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-800/80 p-3 rounded-lg border border-slate-700">
-                    <span class="text-xs text-slate-300 font-medium">Want to make this complex file easier to read through? AI-ify it with tags and structural topics.</span>
-                    <button id="ai-ify-btn" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition-all text-xs flex items-center space-x-2">
-                        <svg class="w-3.5 h-3.5 animate-spin hidden" id="ai-spinner" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <span id="ai-btn-text">AI-ify 😂</span>
-                    </button>
-                </div>
-                <div id="viewer-content" class="min-h-[400px] max-h-[600px] overflow-y-auto pr-2 text-slate-200"></div>
-            </div>
-
-            <!-- View 2: AI Summary Container -->
-            <div id="summary-pane" class="hidden border border-slate-700 rounded-xl bg-slate-900 p-6 min-h-[450px]">
-                <div id="summary-intro" class="text-center py-12 space-y-4">
-                    <h3 class="text-xl font-bold text-white">Comprehensive Document Summary</h3>
-                    <button id="generate-summary-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm flex items-center justify-center space-x-2 mx-auto">
-                        <svg class="w-4 h-4 animate-spin hidden" id="summary-spinner" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <span id="summary-btn-text">Generate AI Summary</span>
-                    </button>
-                </div>
-                <div id="summary-active-area" class="hidden space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                        <h4 class="font-semibold text-white text-base">Executive Document Summary</h4>
-                        <button id="regen-summary-btn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition-colors">Regenerate</button>
-                    </div>
-                    <div id="summary-content" class="text-slate-200 space-y-4 max-h-[550px] overflow-y-auto pr-2"></div>
-                </div>
-            </div>
-
-            <!-- View 3: AI Exam Container -->
-            <div id="exam-pane" class="hidden border border-slate-700 rounded-xl bg-slate-900 p-6 min-h-[450px]">
-                <div id="exam-intro" class="text-center py-12 space-y-4">
-                    <h3 class="text-xl font-bold text-white">Comprehensive AI Exam Generator</h3>
-                    <button id="generate-exam-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm flex items-center justify-center space-x-2 mx-auto">
-                        <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <span id="exam-btn-text">Generate Full Assessment Exam</span>
-                    </button>
-                </div>
-                <div id="exam-active-area" class="hidden space-y-6">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                        <h4 class="font-semibold text-white text-base">Exam Assessment</h4>
-                        <span id="total-questions-badge" class="text-xs bg-indigo-950 text-indigo-300 border border-indigo-800 px-2.5 py-1 rounded-full font-medium"></span>
-                    </div>
-                    <div id="questions-container" class="space-y-6"></div>
-                    <div class="flex justify-end pt-4 border-t border-slate-800">
-                        <button id="submit-exam-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm">Submit Answers</button>
-                    </div>
-                </div>
-                <div id="results-area" class="hidden text-center py-8 space-y-3 bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-                    <h3 class="text-lg font-bold text-white">Assessment Results</h3>
-                    <div id="score-display" class="text-4xl font-extrabold text-indigo-400">0 / 0</div>
-                    <p id="score-feedback" class="text-sm text-slate-300"></p>
-                    <button id="retake-btn" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg transition-colors">Retake Exam</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // --- SECURE JSONBIN INTEGRATION & HARDCODED PROMPT ---
-        const JSONBIN_ID = '6a7a4f06da38895dfed2f54d';
-        const JSONBIN_MASTER_KEY = '$2a$10$ZNYJ5U7gGnDHeybG36ceCuxDwOrFwbogNGd7pytNwPwMaIsmuaEb.';
-        
-        // The prompt is now embedded safely in the JavaScript
-        const GATE_PROMPT = `Create an exam using simple compute related questions based on this exact prompt: what is the full meaning of hdmi, cpu, vga, fps, usb, ufs, ssd, ram, rom, hdd. Generate exactly 10 questions total. Return EXCLUSIVELY a JSON array of objects with keys: "question", "options" (array of exactly 4 choices), "answer" (matching the exact correct option string).`;
-
-        let ACTIVE_API_KEY = "";
-        let VERIFICATION_CHALLENGE_DATA = [];
-        let verificationUserAnswers = {};
-
-        // UI Elements
-        const configScreen = document.getElementById('config-screen');
-        const verificationScreen = document.getElementById('verification-screen');
-        const mainAppContainer = document.getElementById('main-app-container');
-        
-        const loadChallengeBtn = document.getElementById('load-challenge-btn');
-        const configSpinner = document.getElementById('config-spinner');
-        const loadBtnText = document.getElementById('load-btn-text');
-        const configError = document.getElementById('config-error');
-
-        const verificationQuestionsContainer = document.getElementById('verification-questions-container');
-        const submitVerificationBtn = document.getElementById('submit-verification-btn');
-        const proceedAppBtn = document.getElementById('proceed-app-btn');
-        const retryVerificationBtn = document.getElementById('retry-verification-btn');
-        const verificationResults = document.getElementById('verification-results');
-        const verificationScoreText = document.getElementById('verification-score-text');
-        const verificationFeedbackText = document.getElementById('verification-feedback-text');
-        
-        const lockAppBtn = document.getElementById('lock-app-btn');
-
-        // Fetch API Key and Generate Gate
-        loadChallengeBtn.addEventListener('click', async () => {
-            configError.classList.add('hidden');
-            configSpinner.classList.remove('hidden');
-            loadBtnText.textContent = "Connecting to JSONBin & Generating Gate...";
-            loadChallengeBtn.disabled = true;
-
-            try {
-                // 1. Fetch API Key securely from JSONBin
-                const binRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
-                    headers: {
-                        'X-Master-Key': JSONBIN_MASTER_KEY
-                    }
-                });
-                
-                if (!binRes.ok) throw new Error('Failed to retrieve API key from JSONBin. Check ID and Master Key.');
-                const binData = await binRes.json();
-                
-                if (!binData.record || !binData.record.geminiApiKey) {
-                    throw new Error('geminiApiKey missing in JSONBin record.');
-                }
-                ACTIVE_API_KEY = binData.record.geminiApiKey;
-
-                // 2. Generate Challenge using embedded prompt
-                const aiResponseText = await callGeminiApiDirect(ACTIVE_API_KEY, GATE_PROMPT);
-                let cleanedJson = aiResponseText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
-                
-                VERIFICATION_CHALLENGE_DATA = JSON.parse(cleanedJson);
-                renderVerificationChallenge();
-
-                configScreen.classList.add('hidden');
-                verificationScreen.classList.remove('hidden');
-
-            } catch (err) {
-                configError.textContent = 'Setup error: ' + err.message;
-                configError.classList.remove('hidden');
-            } finally {
-                configSpinner.classList.add('hidden');
-                loadBtnText.textContent = "Initialize & Generate Challenge";
-                loadChallengeBtn.disabled = false;
-            }
-        });
-
-        function renderVerificationChallenge() {
-            verificationQuestionsContainer.innerHTML = '';
-            verificationUserAnswers = {};
-            verificationResults.classList.add('hidden');
-            submitVerificationBtn.classList.remove('hidden');
-            proceedAppBtn.classList.add('hidden');
-            retryVerificationBtn.classList.add('hidden');
-
-            VERIFICATION_CHALLENGE_DATA.forEach((q, idx) => {
-                const card = document.createElement('div');
-                card.id = `v-card-${idx}`;
-                card.className = 'bg-slate-900 border border-slate-700 p-4 rounded-xl space-y-2 transition-all';
-
-                let optsHtml = '';
-                q.options.forEach(opt => {
-                    optsHtml += `
-                        <label id="lbl-v-${idx}-${btoa(opt).replace(/=/g, '')}" class="flex items-start space-x-3 p-2.5 rounded-lg border border-slate-800 bg-slate-800/60 hover:bg-slate-800 cursor-pointer text-xs transition-colors">
-                            <input type="radio" name="v-q-${idx}" value="${opt}" class="mt-0.5 text-indigo-500" onchange="storeVerificationChoice(${idx}, '${opt.replace(/'/g, "\\'")}')">
-                            <span class="text-slate-200">${opt}</span>
-                        </label>
-                    `;
-                });
-
-                card.innerHTML = `
-                    <p class="font-medium text-white text-sm">Q${idx + 1}. ${q.question}</p>
-                    <div class="space-y-1.5 mt-2">${optsHtml}</div>
-                    <div id="v-ans-${idx}" class="hidden mt-2 text-xs font-semibold"></div>
-                `;
-                verificationQuestionsContainer.appendChild(card);
-            });
+    // ------------------------------------------------------------------
+    // 0. Refresh Rate Detection
+    // ------------------------------------------------------------------
+    function detectRefreshRate() {
+      let frameCount = 0;
+      let startTime = performance.now();
+      function countFrames() {
+        frameCount++;
+        const elapsed = performance.now() - startTime;
+        if (elapsed >= 1000) {
+          const hz = Math.round(frameCount / (elapsed / 1000));
+          hzValue.textContent = hz;
+          frameCount = 0;
+          startTime = performance.now();
         }
+        requestAnimationFrame(countFrames);
+      }
+      requestAnimationFrame(countFrames);
+    }
+    detectRefreshRate();
 
-        window.storeVerificationChoice = function(idx, val) {
-            verificationUserAnswers[idx] = val;
+    // ------------------------------------------------------------------
+    // 1. Check verification status immediately (no API call)
+    // ------------------------------------------------------------------
+    function checkVerificationStatus() {
+      const verified = localStorage.getItem('pungystudio_verified') === 'true';
+      alreadyVerified = verified;
+      if (verified) {
+        isVerified = true;
+        statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        statusText.textContent = 'Verified';
+        getStartedBtn.textContent = 'Go to Dashboard 🚀';
+        landingSubtext.textContent = 'You are already verified. Click below to access the document suite.';
+        // Add "✅ Verified" badge
+        const badge = document.createElement('span');
+        badge.className = 'ml-2 text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-full';
+        badge.textContent = '✅ Verified';
+        document.querySelector('#landing-page .gradient-text')?.after(badge);
+      } else {
+        isVerified = false;
+        statusDot.className = 'w-2 h-2 rounded-full bg-amber-500';
+        statusText.textContent = 'Not verified';
+        getStartedBtn.textContent = 'Get Started 🚀';
+        landingSubtext.textContent = 'You\'ll answer 10 computer‑abbreviation questions – need 5 correct to unlock.';
+      }
+      // Ensure landing is visible, others hidden
+      landingPage.classList.remove('hidden');
+      verificationOverlay.classList.add('hidden');
+      mainWorkspace.classList.add('hidden');
+    }
+
+    // ------------------------------------------------------------------
+    // 2. Fetch Gemini API Key from JSON Bin (background)
+    // ------------------------------------------------------------------
+    async function fetchGeminiKey() {
+      const url = `https://api.jsonbin.io/v3/b/${JSON_BIN_ID}/latest`;
+      const response = await fetch(url, { headers: { 'X-Master-Key': JSON_BIN_MASTER_KEY } });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      const key = data.record.GEMINI_API_KEY;
+      if (!key) throw new Error('No GEMINI_API_KEY found.');
+      return key;
+    }
+
+    // ------------------------------------------------------------------
+    // 3. Generate Verification Quiz (10 questions)
+    // ------------------------------------------------------------------
+    async function generateVerificationQuiz(apiKey) {
+      const prompt = `Create a 10-question multiple-choice quiz about common computer abbreviations (e.g., HDMI, CPU, VGA, FPS, USB, UFS, SSD, RAM, ROM, HDD, GPU, LAN, WAN, BIOS, PCI, etc.). Each question must have 4 options. Return as JSON array of objects with keys: "question", "options" (array of 4 strings), "answer" (correct option string). Only return valid JSON.`;
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || 'Gemini API error');
+      }
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('No text returned.');
+      let cleaned = text.trim();
+      if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
+      else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+      return JSON.parse(cleaned);
+    }
+
+    // ------------------------------------------------------------------
+    // 4. Render Verification Quiz
+    // ------------------------------------------------------------------
+    function renderVerificationQuiz(questions) {
+      quizContainer.innerHTML = '';
+      verificationScore = 0;
+      answeredCount = 0;
+      quizLocked = false;
+      updateProgress();
+
+      questions.forEach((q, idx) => {
+        const card = document.createElement('div');
+        card.className = 'quiz-card bg-slate-800/80 border border-slate-700 p-4 rounded-xl space-y-2';
+        card.id = `vq-${idx}`;
+        let optsHtml = '';
+        q.options.forEach(opt => {
+          optsHtml += `
+            <label class="flex items-start space-x-3 p-2 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 cursor-pointer transition-colors" id="lbl-${idx}-${opt.replace(/\s/g,'')}">
+              <input type="radio" name="vq-${idx}" value="${opt}" class="mt-1 text-indigo-500 focus:ring-indigo-500" data-q="${idx}" data-opt="${opt}">
+              <span class="text-sm text-slate-200">${opt}</span>
+            </label>
+          `;
+        });
+        card.innerHTML = `
+          <p class="font-semibold text-white text-sm">Q${idx+1}. ${q.question}</p>
+          <div class="space-y-1 mt-1">${optsHtml}</div>
+          <div id="vq-feedback-${idx}" class="text-xs mt-2 hidden"></div>
+        `;
+        quizContainer.appendChild(card);
+      });
+
+      document.querySelectorAll('#quiz-container input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', handleVerificationAnswer);
+      });
+    }
+
+    // ------------------------------------------------------------------
+    // 5. Handle Instant Verification Answer
+    // ------------------------------------------------------------------
+    function handleVerificationAnswer(e) {
+      const radio = e.target;
+      const qIndex = parseInt(radio.dataset.q);
+      const selected = radio.value;
+      const question = verificationQuestions[qIndex];
+      const card = document.getElementById(`vq-${qIndex}`);
+      const feedback = document.getElementById(`vq-feedback-${qIndex}`);
+
+      if (card.dataset.answered === 'true' || quizLocked) {
+        radio.checked = false;
+        return;
+      }
+
+      const radios = card.querySelectorAll('input[type="radio"]');
+      radios.forEach(r => r.disabled = true);
+
+      const isCorrect = (selected === question.answer);
+      const label = card.querySelector(`#lbl-${qIndex}-${selected.replace(/\s/g,'')}`);
+      if (label) {
+        if (isCorrect) {
+          label.classList.add('correct-answer');
+          feedback.textContent = '✅ Correct!';
+          feedback.className = 'text-xs mt-2 text-emerald-400';
+          verificationScore++;
+        } else {
+          label.classList.add('wrong-answer');
+          const correctLabel = card.querySelector(`#lbl-${qIndex}-${question.answer.replace(/\s/g,'')}`);
+          if (correctLabel) correctLabel.classList.add('correct-answer');
+          feedback.textContent = `❌ Incorrect. The correct answer is: ${question.answer}`;
+          feedback.className = 'text-xs mt-2 text-red-400';
         }
+      }
+      feedback.classList.remove('hidden');
+      card.dataset.answered = 'true';
+      answeredCount++;
+      updateProgress();
 
-        // Logic for Grading the Verification Gate (50% threshold)
-        submitVerificationBtn.addEventListener('click', () => {
-            let score = 0;
-            const total = VERIFICATION_CHALLENGE_DATA.length;
-
-            if (Object.keys(verificationUserAnswers).length < total) {
-                alert("Please answer all questions to submit.");
-                return;
-            }
-
-            // Grade questions and reveal answers
-            VERIFICATION_CHALLENGE_DATA.forEach((q, idx) => {
-                const chosen = verificationUserAnswers[idx];
-                const card = document.getElementById(`v-card-${idx}`);
-                const ansText = document.getElementById(`v-ans-${idx}`);
-                
-                // Disable inputs
-                card.querySelectorAll(`input[name="v-q-${idx}"]`).forEach(inp => {
-                    inp.disabled = true;
-                    const lblId = `lbl-v-${idx}-${btoa(inp.value).replace(/=/g, '')}`;
-                    const lbl = document.getElementById(lblId);
-                    
-                    if (inp.value === q.answer) {
-                        lbl.className = 'flex items-start space-x-3 p-2.5 rounded-lg border border-emerald-500 bg-emerald-900/30 text-emerald-200 text-xs';
-                    } else if (inp.checked && inp.value !== q.answer) {
-                        lbl.className = 'flex items-start space-x-3 p-2.5 rounded-lg border border-red-500 bg-red-900/30 text-red-200 text-xs';
-                    }
-                });
-
-                ansText.classList.remove('hidden');
-                if (chosen === q.answer) {
-                    score++;
-                    ansText.textContent = '✓ Correct';
-                    ansText.classList.add('text-emerald-400');
-                    card.classList.add('border-emerald-900');
-                } else {
-                    ansText.textContent = `✗ Incorrect (Answer: ${q.answer})`;
-                    ansText.classList.add('text-red-400');
-                    card.classList.add('border-red-900');
-                }
-            });
-
-            submitVerificationBtn.classList.add('hidden');
-            verificationResults.classList.remove('hidden');
-            verificationScoreText.textContent = `${score} / ${total}`;
-
-            // Required threshold is 50% (half)
-            const passed = score >= Math.ceil(total / 2);
-
-            if (passed) {
-                verificationResults.className = 'text-center p-4 rounded-xl border border-emerald-600 bg-emerald-900/20 space-y-2';
-                verificationFeedbackText.textContent = 'Threshold met! You correctly answered at least 50%. You may now proceed.';
-                verificationFeedbackText.className = 'text-sm text-emerald-300';
-                proceedAppBtn.classList.remove('hidden');
-            } else {
-                verificationResults.className = 'text-center p-4 rounded-xl border border-red-600 bg-red-900/20 space-y-2';
-                verificationFeedbackText.textContent = 'Threshold failed! You need at least 50% correct to proceed.';
-                verificationFeedbackText.className = 'text-sm text-red-300';
-                retryVerificationBtn.classList.remove('hidden');
-            }
-            
-            verificationResults.scrollIntoView({ behavior: 'smooth' });
-        });
-
-        proceedAppBtn.addEventListener('click', () => {
-            verificationScreen.classList.add('hidden');
-            mainAppContainer.classList.remove('hidden');
-            document.body.classList.remove('justify-center');
-        });
-
-        retryVerificationBtn.addEventListener('click', () => {
-            renderVerificationChallenge();
-        });
-
-        lockAppBtn.addEventListener('click', () => {
-            mainAppContainer.classList.add('hidden');
-            configScreen.classList.remove('hidden');
-            document.body.classList.add('justify-center');
-            resetWorkspace();
-        });
-
-
-        // --- MAIN APP LOGIC (Unchanged structural logic for Document Suite) ---
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('file-input');
-        const uploadSection = document.getElementById('upload-section');
-        const workspaceSection = document.getElementById('workspace-section');
-        const errorBox = document.getElementById('error-box');
-        const metaName = document.getElementById('meta-name');
-        const metaSize = document.getElementById('meta-size');
-        const metaType = document.getElementById('meta-type');
-        const changeFileBtn = document.getElementById('change-file-btn');
-        const viewerContent = document.getElementById('viewer-content');
-        
-        // Tabs
-        const tabViewer = document.getElementById('tab-viewer');
-        const tabSummary = document.getElementById('tab-summary');
-        const tabExam = document.getElementById('tab-exam');
-        const viewerPane = document.getElementById('viewer-pane');
-        const summaryPane = document.getElementById('summary-pane');
-        const examPane = document.getElementById('exam-pane');
-
-        let rawFileText = '';
-        let originalViewerHtml = '';
-        
-        async function callGeminiApiDirect(apiKey, promptText) {
-            let url = '[https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent)';
-            const headers = { 'Content-Type': 'application/json' };
-            if (apiKey.startsWith('AQ.')) { headers['Authorization'] = `Bearer ${apiKey}`; } else { url += `?key=${apiKey}`; }
-            const response = await fetch(url, {
-                method: 'POST', headers: headers, body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-            });
-            const responseTextBody = await response.text();
-            let data;
-            try { data = JSON.parse(responseTextBody); } catch (e) { throw new Error(`API returned invalid response: ${responseTextBody || 'Empty response'}`); }
-            if (!response.ok) throw new Error(data.error?.message || `API request failed with status ${response.status}`);
-            const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!responseText) throw new Error('No content returned from AI model.');
-            return responseText;
+      if (verificationScore >= 5 && !quizLocked) {
+        quizLocked = true;
+        verificationResult.textContent = '🎉 You passed! Unlocking full features...';
+        verificationResult.className = 'text-emerald-400 text-sm font-semibold text-center';
+        document.querySelectorAll('#quiz-container input[type="radio"]:not(:disabled)').forEach(r => r.disabled = true);
+        localStorage.setItem('pungystudio_verified', 'true');
+        setTimeout(() => {
+          verificationOverlay.classList.add('hidden');
+          mainWorkspace.classList.remove('hidden');
+          statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+          statusText.textContent = 'Verified';
+        }, 800);
+      } else {
+        const remaining = 5 - verificationScore;
+        if (remaining > 0) {
+          verificationResult.textContent = `You have ${verificationScore} correct. Need ${remaining} more.`;
+          verificationResult.className = 'text-slate-300 text-sm font-semibold text-center';
         }
+      }
+    }
 
-        dropZone.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eName => {
-            dropZone.addEventListener(eName, (e) => { e.preventDefault(); if(eName==='dragenter'||eName==='dragover') dropZone.classList.add('border-indigo-500'); else dropZone.classList.remove('border-indigo-500'); });
+    // ------------------------------------------------------------------
+    // 6. Update Progress Bar
+    // ------------------------------------------------------------------
+    function updateProgress() {
+      const total = verificationQuestions.length || 10;
+      const percent = Math.min((answeredCount / total) * 100, 100);
+      progressFill.style.width = percent + '%';
+    }
+
+    // ------------------------------------------------------------------
+    // 7. Retry Verification (generate new quiz)
+    // ------------------------------------------------------------------
+    async function refreshVerificationQuiz() {
+      verificationResult.textContent = 'Generating new quiz...';
+      verificationResult.className = 'text-slate-300 text-sm font-semibold text-center';
+      retryVerificationBtn.classList.add('hidden');
+      statusDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+      statusText.textContent = 'Generating...';
+      try {
+        const questions = await generateVerificationQuiz(geminiApiKey);
+        verificationQuestions = questions;
+        renderVerificationQuiz(questions);
+        verificationResult.textContent = `New quiz ready (${questions.length} questions). Need 5 correct to pass.`;
+        verificationResult.className = 'text-slate-300 text-sm font-semibold text-center';
+        statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        statusText.textContent = 'Quiz ready';
+      } catch (err) {
+        verificationResult.textContent = 'Error generating quiz: ' + err.message;
+        verificationResult.className = 'text-red-400 text-sm font-semibold text-center';
+        statusDot.className = 'w-2 h-2 rounded-full bg-red-500';
+        statusText.textContent = 'Error';
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 8. Main initialization: first show verification status, then load API in bg
+    // ------------------------------------------------------------------
+    function initApp() {
+      // Step 1: Show landing with correct button based on localStorage
+      checkVerificationStatus();
+
+      // Step 2: Load API key and quiz in background
+      (async function loadApiAndQuiz() {
+        try {
+          statusText.textContent = 'Loading API...';
+          geminiApiKey = await fetchGeminiKey();
+          statusText.textContent = 'Generating quiz...';
+          const questions = await generateVerificationQuiz(geminiApiKey);
+          verificationQuestions = questions;
+          renderVerificationQuiz(questions);
+          statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+          statusText.textContent = alreadyVerified ? 'Verified' : 'Quiz ready';
+        } catch (err) {
+          statusDot.className = 'w-2 h-2 rounded-full bg-red-500';
+          statusText.textContent = 'API error';
+          console.error(err);
+          // Show error on landing
+          const errMsg = document.createElement('p');
+          errMsg.className = 'text-red-400 text-sm mt-4';
+          errMsg.textContent = '⚠️ ' + err.message;
+          document.querySelector('#landing-page .text-slate-300')?.after(errMsg);
+        }
+      })();
+
+      // Step 3: Set up click handler for "Get Started" / "Go to Dashboard"
+      getStartedBtn.onclick = function() {
+        if (alreadyVerified) {
+          // Go straight to workspace
+          landingPage.classList.add('hidden');
+          verificationOverlay.classList.add('hidden');
+          mainWorkspace.classList.remove('hidden');
+        } else {
+          // Show quiz – but only if API key loaded
+          if (!geminiApiKey) {
+            verificationResult.textContent = 'Please wait, API is still loading...';
+            verificationResult.className = 'text-amber-400 text-sm font-semibold text-center';
+            return;
+          }
+          landingPage.classList.add('hidden');
+          verificationOverlay.classList.remove('hidden');
+          statusText.textContent = 'Quiz time!';
+          renderVerificationQuiz(verificationQuestions);
+          verificationResult.textContent = '';
+          retryVerificationBtn.classList.add('hidden');
+        }
+      };
+
+      // Retry button
+      retryVerificationBtn.addEventListener('click', refreshVerificationQuiz);
+    }
+
+    // ------------------------------------------------------------------
+    // 9. Document handling (unchanged)
+    // ------------------------------------------------------------------
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.classList.remove('hidden');
+    }
+    function hideError() {
+      errorBox.classList.add('hidden');
+    }
+    function resetWorkspace() {
+      workspaceSection.classList.add('hidden');
+      uploadSection.classList.remove('hidden');
+      fileInput.value = '';
+      rawFileText = '';
+      originalViewerHtml = '';
+      quizData = [];
+      userAnswers = {};
+      summaryIntro.classList.remove('hidden');
+      summaryActiveArea.classList.add('hidden');
+      examIntro.classList.remove('hidden');
+      examActiveArea.classList.add('hidden');
+      resultsArea.classList.add('hidden');
+      hideError();
+    }
+    function showWorkspace() {
+      uploadSection.classList.add('hidden');
+      workspaceSection.classList.remove('hidden');
+      switchTab('viewer');
+    }
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function switchTab(activeTab) {
+      [tabViewer, tabSummary, tabExam].forEach(t => t.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all');
+      [viewerPane, summaryPane, examPane].forEach(p => p.classList.add('hidden'));
+      if (activeTab === 'viewer') {
+        tabViewer.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all';
+        viewerPane.classList.remove('hidden');
+      } else if (activeTab === 'summary') {
+        tabSummary.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all';
+        summaryPane.classList.remove('hidden');
+      } else if (activeTab === 'exam') {
+        tabExam.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all';
+        examPane.classList.remove('hidden');
+      }
+    }
+
+    tabViewer.addEventListener('click', () => switchTab('viewer'));
+    tabSummary.addEventListener('click', () => switchTab('summary'));
+    tabExam.addEventListener('click', () => switchTab('exam'));
+
+    function handleFile(file) {
+      hideError();
+      if (!file) return;
+      metaName.textContent = file.name;
+      metaSize.textContent = formatBytes(file.size);
+      metaType.textContent = file.type || 'Binary / Unknown';
+      const extension = file.name.split('.').pop().toLowerCase();
+
+      if (extension === 'docx') {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          mammoth.convertToHtml({ arrayBuffer: e.target.result })
+            .then(result => {
+              originalViewerHtml = `<div class="prose prose-invert max-w-none">${result.value}</div>`;
+              viewerContent.innerHTML = originalViewerHtml;
+              const temp = document.createElement('div');
+              temp.innerHTML = result.value;
+              rawFileText = temp.textContent || temp.innerText || '';
+              showWorkspace();
+            })
+            .catch(err => showError('Error parsing Word document: ' + err.message));
+        };
+        reader.readAsArrayBuffer(file);
+        return;
+      }
+      if (['txt','md','json','js','html','css','csv','log'].includes(extension) || file.type.startsWith('text/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          rawFileText = e.target.result;
+          originalViewerHtml = `<pre class="font-mono text-xs text-slate-200 whitespace-pre-wrap">${escapeHtml(rawFileText)}</pre>`;
+          viewerContent.innerHTML = originalViewerHtml;
+          showWorkspace();
+        };
+        reader.readAsText(file);
+        return;
+      }
+      if (['jpg','jpeg','png','gif','webp','svg'].includes(extension) || file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          rawFileText = `[Uploaded Image: ${file.name}]`;
+          originalViewerHtml = `<div class="flex justify-center"><img src="${e.target.result}" class="max-h-[500px] object-contain rounded-lg"></div>`;
+          viewerContent.innerHTML = originalViewerHtml;
+          showWorkspace();
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+      if (extension === 'pdf' || file.type === 'application/pdf') {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          rawFileText = `[PDF Document: ${file.name}]`;
+          originalViewerHtml = `<iframe src="${e.target.result}" class="w-full h-[500px] border-0 rounded-lg"></iframe>`;
+          viewerContent.innerHTML = originalViewerHtml;
+          showWorkspace();
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+      showError('Unsupported file format.');
+    }
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    ['dragenter','dragover'].forEach(ev => {
+      dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-500','bg-slate-800'); });
+    });
+    ['dragleave','drop'].forEach(ev => {
+      dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.remove('border-indigo-500','bg-slate-800'); });
+    });
+    dropZone.addEventListener('drop', (e) => {
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+    changeFileBtn.addEventListener('click', resetWorkspace);
+
+    // ------------------------------------------------------------------
+    // 10. AI Functions using Gemini 3.6 Flash
+    // ------------------------------------------------------------------
+    async function callGemini(prompt) {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || 'API call failed');
+      }
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('No content returned.');
+      return text;
+    }
+
+    aiIfyBtn.addEventListener('click', async () => {
+      hideError();
+      if (!isVerified) { showError('You must complete human verification first.'); return; }
+      if (!rawFileText) { showError('Please upload a document first.'); return; }
+      aiSpinner.classList.remove('hidden');
+      aiBtnText.textContent = 'AI-ifying...';
+      aiIfyBtn.disabled = true;
+      try {
+        const prompt = `You are an expert document organizer. Analyze the following text and restructure it with clear topics, sub-topics, and semantic inline tags (use Tailwind classes). Return as clean HTML. Document:\n${rawFileText.substring(0,20000)}`;
+        const result = await callGemini(prompt);
+        let cleaned = result.trim();
+        if (cleaned.startsWith('```html')) cleaned = cleaned.replace(/^```html/,'').replace(/```$/,'').trim();
+        else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/,'').replace(/```$/,'').trim();
+        viewerContent.innerHTML = `
+          <div class="mb-4 flex items-center justify-between text-xs text-indigo-400 font-medium bg-indigo-950/40 border border-indigo-900 p-2 rounded-lg">
+            <span>✨ Document successfully AI-ified!</span>
+            <button id="revert-view-btn" class="underline text-slate-300 hover:text-white">Show Original</button>
+          </div>
+          <div class="space-y-4">${cleaned}</div>
+        `;
+        document.getElementById('revert-view-btn').addEventListener('click', () => {
+          viewerContent.innerHTML = originalViewerHtml;
         });
-        dropZone.addEventListener('drop', (e) => { if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+      } catch (err) {
+        showError('AI-ify Error: ' + err.message);
+      } finally {
+        aiSpinner.classList.add('hidden');
+        aiBtnText.textContent = 'AI-ify 😂';
+        aiIfyBtn.disabled = false;
+      }
+    });
 
-        function handleFile(file) {
-            errorBox.classList.add('hidden');
-            if (!file) return;
-            metaName.textContent = file.name;
-            metaSize.textContent = (file.size / 1024).toFixed(2) + ' KB';
-            metaType.textContent = file.type || 'Unknown';
-            const ext = file.name.split('.').pop().toLowerCase();
+    async function runSummaryGeneration() {
+      hideError();
+      if (!isVerified) { showError('Verification required.'); return; }
+      if (!rawFileText) { showError('Upload a document first.'); return; }
+      summarySpinner.classList.remove('hidden');
+      summaryBtnText.textContent = 'Generating...';
+      generateSummaryBtn.disabled = true;
+      try {
+        const prompt = `Provide a comprehensive executive summary of this text with: 1. Overview, 2. Key takeaways (bullets), 3. Topic breakdown, 4. Conclusion. Use Tailwind HTML classes.\n${rawFileText.substring(0,25000)}`;
+        const result = await callGemini(prompt);
+        let cleaned = result.trim();
+        if (cleaned.startsWith('```html')) cleaned = cleaned.replace(/^```html/,'').replace(/```$/,'').trim();
+        else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/,'').replace(/```$/,'').trim();
+        summaryContent.innerHTML = cleaned;
+        summaryIntro.classList.add('hidden');
+        summaryActiveArea.classList.remove('hidden');
+      } catch (err) {
+        showError('Summary error: ' + err.message);
+      } finally {
+        summarySpinner.classList.add('hidden');
+        summaryBtnText.textContent = 'Generate AI Summary';
+        generateSummaryBtn.disabled = false;
+      }
+    }
+    generateSummaryBtn.addEventListener('click', runSummaryGeneration);
+    regenSummaryBtn.addEventListener('click', runSummaryGeneration);
 
-            if (ext === 'docx') {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    mammoth.convertToHtml({ arrayBuffer: e.target.result }).then(result => {
-                        originalViewerHtml = `<div class="prose prose-invert max-w-none">${result.value}</div>`;
-                        viewerContent.innerHTML = originalViewerHtml;
-                        const temp = document.createElement('div'); temp.innerHTML = result.value; rawFileText = temp.textContent || '';
-                        showWorkspace();
-                    }).catch(err => { errorBox.textContent='Parse Error'; errorBox.classList.remove('hidden'); });
-                };
-                reader.readAsArrayBuffer(file);
-            } else if (['txt', 'md', 'json', 'html', 'css', 'js'].includes(ext) || file.type.startsWith('text/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    rawFileText = e.target.result;
-                    originalViewerHtml = `<pre class="font-mono text-xs text-slate-200 whitespace-pre-wrap">${rawFileText.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>`;
-                    viewerContent.innerHTML = originalViewerHtml;
-                    showWorkspace();
-                };
-                reader.readAsText(file);
-            } else {
-                errorBox.textContent = 'Unsupported file for full parsing in demo.'; errorBox.classList.remove('hidden');
-            }
-        }
+    generateExamBtn.addEventListener('click', async () => {
+      hideError();
+      if (!isVerified) { showError('Verification required.'); return; }
+      if (!rawFileText) { showError('Upload a document first.'); return; }
+      examSpinner.classList.remove('hidden');
+      examBtnText.textContent = 'Generating...';
+      generateExamBtn.disabled = true;
+      try {
+        const prompt = `Create a comprehensive multiple-choice quiz (10-25 questions) based on the following text. Return as JSON array of objects with keys: question, options (array of 4), answer, explanation.\n${rawFileText.substring(0,25000)}`;
+        const result = await callGemini(prompt);
+        let cleaned = result.trim();
+        if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/,'').replace(/```$/,'').trim();
+        else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/,'').replace(/```$/,'').trim();
+        quizData = JSON.parse(cleaned);
+        renderExamQuestions();
+      } catch (err) {
+        showError('Exam generation error: ' + err.message);
+      } finally {
+        examSpinner.classList.add('hidden');
+        examBtnText.textContent = 'Generate Full Assessment Exam';
+        generateExamBtn.disabled = false;
+      }
+    });
 
-        function showWorkspace() {
-            uploadSection.classList.add('hidden'); workspaceSection.classList.remove('hidden'); switchTab('viewer');
-        }
-
-        function switchTab(activeTab) {
-            [tabViewer, tabSummary, tabExam].forEach(t => t.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all');
-            [viewerPane, summaryPane, examPane].forEach(p => p.classList.add('hidden'));
-            if (activeTab === 'viewer') { tabViewer.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white'; viewerPane.classList.remove('hidden'); }
-            if (activeTab === 'summary') { tabSummary.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white'; summaryPane.classList.remove('hidden'); }
-            if (activeTab === 'exam') { tabExam.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white'; examPane.classList.remove('hidden'); }
-        }
-
-        tabViewer.addEventListener('click', () => switchTab('viewer'));
-        tabSummary.addEventListener('click', () => switchTab('summary'));
-        tabExam.addEventListener('click', () => switchTab('exam'));
-        changeFileBtn.addEventListener('click', resetWorkspace);
-        function resetWorkspace() { workspaceSection.classList.add('hidden'); uploadSection.classList.remove('hidden'); fileInput.value = ''; }
-        
-        // AI Functions bindings (simplified for spacing)
-        document.getElementById('ai-ify-btn').addEventListener('click', async () => {
-            document.getElementById('ai-spinner').classList.remove('hidden');
-            let res = await callGeminiApiDirect(ACTIVE_API_KEY, `Organize with tags in HTML:\n\n${rawFileText.substring(0, 5000)}`);
-            viewerContent.innerHTML = res.replace(/```html|```/g, '');
-            document.getElementById('ai-spinner').classList.add('hidden');
+    function renderExamQuestions() {
+      questionsContainer.innerHTML = '';
+      userAnswers = {};
+      totalQuestionsBadge.textContent = `${quizData.length} Questions Generated`;
+      quizData.forEach((q, qIndex) => {
+        const card = document.createElement('div');
+        card.className = 'bg-slate-800/80 border border-slate-700 p-5 rounded-xl space-y-3';
+        let optsHtml = '';
+        q.options.forEach(opt => {
+          optsHtml += `
+            <label class="flex items-start space-x-3 p-3 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 cursor-pointer transition-colors">
+              <input type="radio" name="q-${qIndex}" value="${opt}" class="mt-1 text-indigo-500 focus:ring-indigo-500" onchange="storeChoice(${qIndex}, '${opt.replace(/'/g, "\\'")}')">
+              <span class="text-sm text-slate-200">${opt}</span>
+            </label>
+          `;
         });
-    </script>
+        card.innerHTML = `
+          <p class="font-semibold text-white text-base">Q${qIndex+1}. ${q.question}</p>
+          <div class="space-y-2 mt-2">${optsHtml}</div>
+          <div id="expl-${qIndex}" class="hidden text-xs mt-3 p-3 rounded-lg bg-indigo-950/60 border border-indigo-800 text-indigo-200">
+            <span class="font-semibold">Explanation:</span> ${q.explanation}
+          </div>
+        `;
+        questionsContainer.appendChild(card);
+      });
+      examIntro.classList.add('hidden');
+      examActiveArea.classList.remove('hidden');
+    }
+
+    window.storeChoice = function(qIndex, val) {
+      userAnswers[qIndex] = val;
+    };
+
+    submitExamBtn.addEventListener('click', () => {
+      if (Object.keys(userAnswers).length < quizData.length) {
+        if (!confirm('You have unanswered questions. Submit anyway?')) return;
+      }
+      let score = 0;
+      quizData.forEach((q, idx) => {
+        const chosen = userAnswers[idx];
+        const card = questionsContainer.children[idx];
+        const expl = document.getElementById(`expl-${idx}`);
+        expl.classList.remove('hidden');
+        card.querySelectorAll(`input[name="q-${idx}"]`).forEach(inp => {
+          inp.disabled = true;
+          const parent = inp.parentElement;
+          if (inp.value === q.answer) {
+            parent.className = 'flex items-start space-x-3 p-3 rounded-lg border border-emerald-600 bg-emerald-950/50 text-emerald-200';
+          } else if (inp.checked && inp.value !== q.answer) {
+            parent.className = 'flex items-start space-x-3 p-3 rounded-lg border border-red-600 bg-red-950/50 text-red-200';
+          }
+        });
+        if (chosen === q.answer) score++;
+      });
+      submitExamBtn.classList.add('hidden');
+      scoreDisplay.textContent = `${score} / ${quizData.length}`;
+      const ratio = score / quizData.length;
+      if (ratio === 1) scoreFeedback.textContent = 'Flawless performance!';
+      else if (ratio >= 0.7) scoreFeedback.textContent = 'Great proficiency!';
+      else scoreFeedback.textContent = 'Good effort. Review explanations to improve.';
+      resultsArea.classList.remove('hidden');
+      resultsArea.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    retakeBtn.addEventListener('click', () => {
+      resultsArea.classList.add('hidden');
+      submitExamBtn.classList.remove('hidden');
+      renderExamQuestions();
+    });
+
+    // ------------------------------------------------------------------
+    // 11. Start the app
+    // ------------------------------------------------------------------
+    initApp();
+  </script>
 </body>
-</html>
+    </html>
