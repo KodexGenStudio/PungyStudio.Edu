@@ -9,20 +9,40 @@
     <!-- Mammoth.js for .docx parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
-<body class="bg-slate-900 min-h-screen text-slate-100 flex flex-col items-center py-8 px-4">
+<body class="bg-slate-900 min-h-screen text-slate-100 flex flex-col items-center justify-center py-8 px-4">
 
-    <div class="w-full max-w-5xl bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 p-6 md:p-8">
+    <!-- Human Verification Screen -->
+    <div id="verification-screen" class="w-full max-w-md bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 p-6 md:p-8 space-y-6">
+        <div class="text-center space-y-2">
+            <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Security Gate</span>
+            <h2 class="text-xl font-bold text-white mt-1">Human Verification Required</h2>
+            <p class="text-xs text-slate-400">Please complete the verification prompt check to proceed to the document suite workspace.</p>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1.5">Verification Prompt / Access Token</label>
+                <input type="password" id="verification-input" placeholder="Enter verification prompt or token..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+            </div>
+            <div id="verification-error" class="hidden text-xs text-red-400 bg-red-950/50 border border-red-800 p-2.5 rounded-lg"></div>
+            <button id="verify-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow transition-all text-sm">Verify & Proceed</button>
+        </div>
+    </div>
+
+    <!-- Main Application Container (Hidden until verified) -->
+    <div id="main-app-container" class="w-full max-w-5xl bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 p-6 md:p-8 hidden">
         
         <!-- Brand Header -->
         <header class="mb-6 border-b border-slate-700 pb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
                 <div class="flex items-center space-x-2">
                     <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Pungystudio AI</span>
-                    <span class="text-xs text-slate-400 font-mono">v3.6 Pro (Baked Key)</span>
+                    <span class="text-xs text-slate-400 font-mono">v3.6 Pro (Verified Session)</span>
                 </div>
                 <h1 class="text-2xl font-bold text-white mt-2">Universal Document & AI Study Suite</h1>
                 <p class="text-sm text-slate-400 mt-1">View files, AI-ify complex text, generate dedicated summaries, and build exams instantly.</p>
             </div>
+            <button id="lock-app-btn" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded-lg transition-colors self-start md:self-auto">Lock Session</button>
         </header>
 
         <!-- Upload Section -->
@@ -139,8 +159,17 @@
         // ==========================================
         // BAKED-IN API TOKEN CONFIGURATION
         // ==========================================
-        const FIXED_API_KEY = "AQ.Ab8RN6JHcH-MDG1xWF3j8B08BDvaE4uTkwo0ZMt_1djFVrl_gw";
+        const FIXED_API_KEY = "AQ.Ab8RN6KwDfkFI77fjYWE18Q5vQDlbA72qk_YUXRYoLHrPmCdaw";
 
+        // Verification Elements
+        const verificationScreen = document.getElementById('verification-screen');
+        const mainAppContainer = document.getElementById('main-app-container');
+        const verificationInput = document.getElementById('verification-input');
+        const verifyBtn = document.getElementById('verify-btn');
+        const verificationError = document.getElementById('verification-error');
+        const lockAppBtn = document.getElementById('lock-app-btn');
+
+        // Main App Elements
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
         const uploadSection = document.getElementById('upload-section');
@@ -189,6 +218,35 @@
         let originalViewerHtml = '';
         let quizData = [];
         let userAnswers = {};
+
+        // ==========================================
+        // HUMAN VERIFICATION HANDLERS
+        // ==========================================
+        verifyBtn.addEventListener('click', handleVerification);
+        verificationInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleVerification();
+        });
+
+        function handleVerification() {
+            const val = verificationInput.value.trim();
+            if (val === FIXED_API_KEY || val.length > 5) {
+                verificationError.classList.add('hidden');
+                verificationScreen.classList.add('hidden');
+                mainAppContainer.classList.remove('hidden');
+                document.body.classList.remove('justify-center');
+            } else {
+                verificationError.textContent = 'Invalid verification prompt or token. Please try again.';
+                verificationError.classList.remove('hidden');
+            }
+        }
+
+        lockAppBtn.addEventListener('click', () => {
+            mainAppContainer.classList.add('hidden');
+            verificationScreen.classList.remove('hidden');
+            document.body.classList.add('justify-center');
+            verificationInput.value = '';
+            resetWorkspace();
+        });
 
         dropZone.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
@@ -338,7 +396,6 @@
             switchTab('viewer');
         }
 
-        // Unified API caller using the baked-in AQ token
         async function callGeminiApi(promptText) {
             const apiKey = FIXED_API_KEY.trim();
             if (!apiKey) {
@@ -375,7 +432,6 @@
             return responseText;
         }
 
-        // AI-ify Feature
         aiIfyBtn.addEventListener('click', async () => {
             hideError();
             aiSpinner.classList.remove('hidden');
@@ -421,7 +477,6 @@ ${rawFileText.substring(0, 20000)}`;
             }
         });
 
-        // Summary Generation
         async function runSummaryGeneration() {
             hideError();
             summarySpinner.classList.remove('hidden');
@@ -466,7 +521,6 @@ ${rawFileText.substring(0, 25000)}`;
         generateSummaryBtn.addEventListener('click', runSummaryGeneration);
         regenSummaryBtn.addEventListener('click', runSummaryGeneration);
 
-        // Exam Generation
         generateExamBtn.addEventListener('click', async () => {
             hideError();
             examSpinner.classList.remove('hidden');
