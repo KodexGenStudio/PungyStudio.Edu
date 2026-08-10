@@ -9,23 +9,7 @@
     <!-- Mammoth.js for .docx parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
-<body class="bg-slate-900 min-h-screen text-slate-100 flex flex-col items-center py-8 px-4 relative">
-
-    <!-- Robot Verification Modal Gate -->
-    <div id="robot-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full space-y-4 text-center shadow-2xl">
-            <div class="w-12 h-12 bg-indigo-600/20 border border-indigo-500/30 rounded-full flex items-center justify-center mx-auto text-indigo-400">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.56-2.803 9M12 11c0-3.517 1.009-6.56 2.803-9M12 11a7.001 7.001 0 01-7-7m7 7a7.001 7.001 0 007-7M9 21h6"/></svg>
-            </div>
-            <h3 class="text-xl font-bold text-white">Security Verification</h3>
-            <p class="text-sm text-slate-300">Please prove you are human to access the Pungystudio AI suite.</p>
-            
-            <div id="robot-challenge-area" class="space-y-3 pt-2">
-                <button id="start-verification-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-all text-sm shadow">Start Verification Test</button>
-            </div>
-            <div id="robot-loading" class="hidden text-xs text-indigo-400 animate-pulse py-2">Generating verification test...</div>
-        </div>
-    </div>
+<body class="bg-slate-900 min-h-screen text-slate-100 flex flex-col items-center py-8 px-4">
 
     <div class="w-full max-w-5xl bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 p-6 md:p-8">
         
@@ -39,13 +23,10 @@
                 <h1 class="text-2xl font-bold text-white mt-2">Universal Document & AI Study Suite</h1>
                 <p class="text-sm text-slate-400 mt-1">View files, AI-ify complex text, generate dedicated summaries, and build exams instantly.</p>
             </div>
-            <!-- Locked Status Badge -->
-            <div class="flex flex-col items-start md:items-end">
-                <span class="text-xs font-semibold text-slate-300 mb-1">Security Status</span>
-                <div class="px-3 py-1.5 text-xs font-mono text-emerald-400 bg-emerald-950/50 border border-emerald-800 rounded-lg flex items-center space-x-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>API Secured & Locked</span>
-                </div>
+            <!-- API Key Input -->
+            <div class="flex flex-col">
+                <label for="api-key" class="text-xs font-semibold text-slate-300 mb-1">Gemini API Key / Token</label>
+                <input type="password" id="api-key" placeholder="Enter your API Key or AQ Token" class="px-3 py-1.5 text-sm bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full md:w-64">
             </div>
         </header>
 
@@ -160,90 +141,7 @@
     </div>
 
     <script>
-        // Updated API Key implementation
-        const GEMINI_API_KEY = "AQ.Ab8RN6J1TtBZbn3neaRiJu_6ZxiDr4Jm5sfeT-klQUIDp0YZ5A";
-
-        // Robot Verification Logic with Robust Local Fallback
-        let expectedRobotAnswer = '';
-        const startVerificationBtn = document.getElementById('start-verification-btn');
-        const robotLoading = document.getElementById('robot-loading');
-        const robotChallengeArea = document.getElementById('robot-challenge-area');
-        const robotModal = document.getElementById('robot-modal');
-
-        startVerificationBtn.addEventListener('click', async () => {
-            robotLoading.classList.remove('hidden');
-            startVerificationBtn.classList.add('hidden');
-
-            let challenge = null;
-
-            try {
-                let promptText = 'Generate a simple human verification math or logic question. Return strictly JSON with keys: "question" (string) and "answer" (string, short lowercase answer).';
-                
-                try {
-                    const txtRes = await fetch('prompt.txt');
-                    if (txtRes.ok) {
-                        promptText = await txtRes.text();
-                    }
-                } catch (e) {
-                    // Ignore local prompt.txt fetch errors
-                }
-
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'x-goog-api-key': GEMINI_API_KEY 
-                    },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: promptText }] }]
-                    })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (responseText) {
-                        let cleaned = responseText.trim();
-                        if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
-                        else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
-                        challenge = JSON.parse(cleaned);
-                    }
-                }
-            } catch (err) {
-                console.log('API verification fallback triggered due to network/key restrictions.');
-            }
-
-            // Fallback challenge if API call fails or key is invalid
-            if (!challenge || !challenge.question || !challenge.answer) {
-                challenge = {
-                    question: "What is 15 minus 7? (Enter the number)",
-                    answer: "8"
-                };
-            }
-
-            expectedRobotAnswer = String(challenge.answer).trim().toLowerCase();
-
-            robotLoading.classList.add('hidden');
-            robotChallengeArea.innerHTML = `
-                <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl text-left space-y-3">
-                    <p class="text-sm font-medium text-slate-200">${challenge.question}</p>
-                    <input type="text" id="robot-answer-input" placeholder="Enter your answer here..." class="w-full px-3 py-2 text-sm bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button id="verify-answer-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 rounded-lg transition-all text-sm shadow">Verify Human</button>
-                    <p id="robot-error" class="text-xs text-red-400 hidden font-medium">Incorrect answer. Please try again.</p>
-                </div>
-            `;
-
-            document.getElementById('verify-answer-btn').addEventListener('click', () => {
-                const userVal = document.getElementById('robot-answer-input').value.trim().toLowerCase();
-                if (userVal === expectedRobotAnswer) {
-                    robotModal.classList.add('hidden');
-                } else {
-                    document.getElementById('robot-error').classList.remove('hidden');
-                }
-            });
-        });
-
-        // App Workspace Logic
+        const apiKeyInput = document.getElementById('api-key');
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
         const uploadSection = document.getElementById('upload-section');
@@ -292,6 +190,13 @@
         let originalViewerHtml = '';
         let quizData = [];
         let userAnswers = {};
+
+        if (localStorage.getItem('pungystudio_gemini_key')) {
+            apiKeyInput.value = localStorage.getItem('pungystudio_gemini_key');
+        }
+        apiKeyInput.addEventListener('input', () => {
+            localStorage.setItem('pungystudio_gemini_key', apiKeyInput.value.trim());
+        });
 
         dropZone.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
@@ -441,6 +346,44 @@
             switchTab('viewer');
         }
 
+        // Unified robust API caller supporting both AQ tokens and AIza keys
+        async function callGeminiApi(promptText) {
+            const apiKey = apiKeyInput.value.trim();
+            if (!apiKey) {
+                throw new Error('Please provide your Gemini API key or token in the top right box.');
+            }
+
+            let url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+            const headers = { 'Content-Type': 'application/json' };
+
+            if (apiKey.startsWith('AQ.')) {
+                headers['Authorization'] = `Bearer ${apiKey}`;
+            } else {
+                url += `?key=${apiKey}`;
+            }
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: promptText }]
+                    }]
+                })
+            });
+
+            if (!response.ok) {
+                const errRes = await response.json();
+                throw new Error(errRes.error?.message || `API request failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+            const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!responseText) throw new Error('No content returned from AI model.');
+            return responseText;
+        }
+
+        // AI-ify Feature
         aiIfyBtn.addEventListener('click', async () => {
             hideError();
             aiSpinner.classList.remove('hidden');
@@ -449,32 +392,21 @@
 
             try {
                 const prompt = `You are an expert document organizer and tutor. Analyze the following complex document text and restructure it to make it exceptionally easy to read through. 
-Add clear topics, sub-topics, section headings, and semantic inline tags. Return your response formatted cleanly in Tailwind CSS HTML classes.
+Add clear topics, sub-topics, section headings, and semantic inline tags (e.g., <span class="bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded text-xs font-mono mr-2">Tag Name</span>) to separate different concepts.
+
+Return your response formatted cleanly in Tailwind CSS HTML classes.
 
 Document Context:
 ${rawFileText.substring(0, 20000)}`;
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'x-goog-api-key': GEMINI_API_KEY 
-                    },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-
-                if (!response.ok) {
-                    const errRes = await response.json();
-                    throw new Error(errRes.error?.message || 'API request failed');
-                }
-
-                const data = await response.json();
-                const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!responseText) throw new Error('No content returned from AI model.');
+                let responseText = await callGeminiApi(prompt);
 
                 let cleaned = responseText.trim();
-                if (cleaned.startsWith('```html')) cleaned = cleaned.replace(/^```html/, '').replace(/```$/, '').trim();
-                else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+                if (cleaned.startsWith('```html')) {
+                    cleaned = cleaned.replace(/^```html/, '').replace(/```$/, '').trim();
+                } else if (cleaned.startsWith('```')) {
+                    cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+                }
 
                 viewerContent.innerHTML = `
                     <div class="mb-4 flex items-center justify-between text-xs text-indigo-400 font-medium bg-indigo-950/40 border border-indigo-900 p-2 rounded-lg">
@@ -497,6 +429,7 @@ ${rawFileText.substring(0, 20000)}`;
             }
         });
 
+        // Summary Generation
         async function runSummaryGeneration() {
             hideError();
             summarySpinner.classList.remove('hidden');
@@ -505,32 +438,25 @@ ${rawFileText.substring(0, 20000)}`;
 
             try {
                 const prompt = `You are an expert researcher and academic analyst. Provide a comprehensive, structured executive summary of the following document text. 
-Include Executive Overview, Core Key Takeaways, Main Subject Breakdowns, and Conclusion. Format cleanly in Tailwind CSS HTML classes.
+Include:
+1. Executive Overview
+2. Core Key Takeaways (bullet points)
+3. Main Subject Breakdowns (Topics & Sub-topics)
+4. Conclusion or Final Verdict
+
+Return your response formatted cleanly in Tailwind CSS HTML classes.
 
 Document Context:
 ${rawFileText.substring(0, 25000)}`;
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'x-goog-api-key': GEMINI_API_KEY 
-                    },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-
-                if (!response.ok) {
-                    const errRes = await response.json();
-                    throw new Error(errRes.error?.message || 'API call failed');
-                }
-
-                const data = await response.json();
-                const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!responseText) throw new Error('No content returned from AI model.');
+                let responseText = await callGeminiApi(prompt);
 
                 let cleaned = responseText.trim();
-                if (cleaned.startsWith('```html')) cleaned = cleaned.replace(/^```html/, '').replace(/```$/, '').trim();
-                else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+                if (cleaned.startsWith('```html')) {
+                    cleaned = cleaned.replace(/^```html/, '').replace(/```$/, '').trim();
+                } else if (cleaned.startsWith('```')) {
+                    cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+                }
 
                 summaryContent.innerHTML = cleaned;
                 summaryIntro.classList.add('hidden');
@@ -548,6 +474,7 @@ ${rawFileText.substring(0, 25000)}`;
         generateSummaryBtn.addEventListener('click', runSummaryGeneration);
         regenSummaryBtn.addEventListener('click', runSummaryGeneration);
 
+        // Exam Generation
         generateExamBtn.addEventListener('click', async () => {
             hideError();
             examSpinner.classList.remove('hidden');
@@ -555,33 +482,25 @@ ${rawFileText.substring(0, 25000)}`;
             generateExamBtn.disabled = true;
 
             try {
-                const prompt = `You are an expert professor. Based on the document context, generate between 10 to 25 multiple-choice questions. 
-Return your response EXCLUSIVELY as a valid JSON array of objects with keys: "question", "options" (array of 4 choices), "answer", and "explanation".
+                const prompt = `You are an expert professor and examiner. Based comprehensively on the entire document context provided below, generate a complete assessment quiz consisting of multiple-choice questions (create between 10 to 25 questions to thoroughly test every major section). 
+
+Return your response EXCLUSIVELY as a valid JSON array of objects. Each object must have these exact keys:
+- "question": string
+- "options": array of 4 choices (strings)
+- "answer": string (must precisely match one option)
+- "explanation": string (why the answer is correct)
 
 Document Context:
 ${rawFileText.substring(0, 25000)}`;
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'x-goog-api-key': GEMINI_API_KEY 
-                    },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-
-                if (!response.ok) {
-                    const errRes = await response.json();
-                    throw new Error(errRes.error?.message || 'API call failed');
-                }
-
-                const data = await response.json();
-                const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!responseText) throw new Error('No content returned from AI model.');
+                let responseText = await callGeminiApi(prompt);
 
                 let cleaned = responseText.trim();
-                if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
-                else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+                if (cleaned.startsWith('```json')) {
+                    cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
+                } else if (cleaned.startsWith('```')) {
+                    cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+                }
 
                 quizData = JSON.parse(cleaned);
                 renderExamQuestions();
