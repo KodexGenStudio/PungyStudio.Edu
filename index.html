@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,17 +17,13 @@
         <div class="text-center space-y-2">
             <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Dynamic Gate</span>
             <h2 class="text-xl font-bold text-white mt-1">Session Setup</h2>
-            <p class="text-xs text-slate-400">Enter your API key and GitHub prompt.txt raw URL to generate AI verification challenges.</p>
+            <p class="text-xs text-slate-400">Enter your API key. prompt.txt will be loaded automatically from your repository.</p>
         </div>
 
         <div class="space-y-4">
             <div>
                 <label class="block text-xs font-medium text-slate-300 mb-1.5">Gemini API Key</label>
                 <input type="password" id="api-key-input" value="AQ.Ab8RN6KwDfkFI77fjYWE18Q5vQDlbA72qk_YUXRYoLHrPmCdaw" placeholder="Enter API key..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 font-mono">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1.5">GitHub prompt.txt Raw URL</label>
-                <input type="text" id="prompt-url-input" placeholder="https://raw.githubusercontent.com/.../prompt.txt" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500 font-mono">
             </div>
             <div id="config-error" class="hidden text-xs text-red-400 bg-red-950/50 border border-red-800 p-2.5 rounded-lg"></div>
             <button id="load-challenge-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow transition-all text-sm flex items-center justify-center space-x-2">
@@ -190,7 +187,6 @@
         const mainAppContainer = document.getElementById('main-app-container');
         
         const apiKeyInput = document.getElementById('api-key-input');
-        const promptUrlInput = document.getElementById('prompt-url-input');
         const loadChallengeBtn = document.getElementById('load-challenge-btn');
         const configSpinner = document.getElementById('config-spinner');
         const configError = document.getElementById('config-error');
@@ -252,15 +248,9 @@
 
         loadChallengeBtn.addEventListener('click', async () => {
             const key = apiKeyInput.value.trim();
-            const promptUrl = promptUrlInput.value.trim();
 
             if (!key) {
                 configError.textContent = 'Please enter your Gemini API key.';
-                configError.classList.remove('hidden');
-                return;
-            }
-            if (!promptUrl) {
-                configError.textContent = 'Please enter the raw URL of your prompt.txt file.';
                 configError.classList.remove('hidden');
                 return;
             }
@@ -271,9 +261,9 @@
             loadChallengeBtn.disabled = true;
 
             try {
-                // Step 1: Fetch prompt.txt from GitHub
-                const promptRes = await fetch(promptUrl);
-                if (!promptRes.ok) throw new Error('Failed to fetch prompt.txt from GitHub URL.');
+                // Step 1: Automatically fetch prompt.txt locally from the same repo/directory
+                const promptRes = await fetch('prompt.txt');
+                if (!promptRes.ok) throw new Error('Failed to fetch prompt.txt. Make sure prompt.txt is in the same directory.');
                 const promptInstructions = await promptRes.text();
 
                 // Step 2: Use the API key to generate verification challenge questions based on prompt.txt
