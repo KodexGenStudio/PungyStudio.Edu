@@ -1,0 +1,3 @@
+create exam using simple compute related questions
+what is the full meaning of hdmi ,cpu,vga,fps,usb,ufs,ssd,ram,rom,hdd
+once user gets half of the questions correct he can go through also showing the question he got wrong or right
