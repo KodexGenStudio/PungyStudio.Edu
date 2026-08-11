@@ -226,7 +226,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider shadow-lg">Pungystudio AI</span>
-          <span class="text-xs text-slate-400 font-mono">v5.4 Pro</span>
+          <span class="text-xs text-slate-400 font-mono">v5.5 Pro</span>
         </div>
         <h1 class="text-2xl font-bold text-white mt-1">Document &amp; AI Study Suite</h1>
       </div>
@@ -284,7 +284,7 @@
         <h2 class="text-xl font-bold text-white">Human Verification</h2>
         <span class="ml-auto text-xs text-indigo-300 bg-indigo-950/60 px-3 py-1 rounded-full border border-indigo-800">Pungystudio AI</span>
       </div>
-      <p class="text-sm text-slate-300 mb-4">Answer all 10 questions. You need <span class="font-semibold text-indigo-400">5 correct</span> to unlock.</p>
+      <p class="text-sm text-slate-300 mb-4">Answer at least <span class="font-semibold text-indigo-400">5 questions</span> correctly to pass. You can submit once you've answered at least 5 questions.</p>
       <div class="w-full bg-slate-700 rounded-full h-2.5 mb-6 overflow-hidden">
         <div id="progress-fill" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2.5 rounded-full transition-all duration-500" style="width:0%"></div>
       </div>
@@ -486,7 +486,7 @@
 
   <script>
     // ════════════════════════════════════════════════════════════════
-    // Pungystudio AI – v5.4 Pro – Verification submit button restored
+    // Pungystudio AI – v5.5 Pro – Verification: submit after 5 answered
     // ════════════════════════════════════════════════════════════════
 
     const JSON_BIN_ID = '6a7a4f06da38895dfed2f54d';
@@ -655,7 +655,6 @@
       quizContainer.innerHTML = '';
       verificationScore = 0; answeredCount = 0; quizLocked = false;
       progressFill.style.width = '0%';
-      // Hide retry button
       retryVerificationBtn.classList.add('hidden');
       verificationResult.textContent = '';
       submitVerificationBtn.disabled = false;
@@ -681,24 +680,20 @@
         quizContainer.appendChild(card);
       });
 
-      // Attach click to labels – just update UI, don't auto-submit
       quizContainer.querySelectorAll('.radio-label').forEach(label => {
         label.addEventListener('click', function(e) {
           const radio = this.querySelector('input[type="radio"]');
           if (!radio) return;
           radio.checked = true;
-          // Update UI: highlight selection, show feedback but don't submit yet
           const qIndex = parseInt(radio.dataset.q);
           const selected = radio.value;
           const question = verificationQuestions[qIndex];
           const card = document.getElementById(`vq-${qIndex}`);
           const feedback = document.getElementById(`vq-feedback-${qIndex}`);
-          // If already answered, ignore
           if (card.dataset.answered === 'true' || quizLocked) {
             radio.checked = false;
             return;
           }
-          // Disable other radios in this question
           const radios = card.querySelectorAll('input[type="radio"]');
           radios.forEach(r => r.disabled = true);
           const isCorrect = (selected === question.answer);
@@ -719,25 +714,23 @@
           feedback.classList.remove('hidden');
           card.dataset.answered = 'true';
           answeredCount++;
-          // Update progress
           progressFill.style.width = (answeredCount / verificationQuestions.length * 100) + '%';
-          // Enable submit button if all answered? We'll keep it always enabled.
         });
       });
     }
 
-    // ─── Submit Verification ───
+    // ─── Submit Verification (now requires at least 5 answered) ───
     function submitVerification() {
       if (quizLocked) return;
-      // Check if all questions are answered
       const total = verificationQuestions.length;
       const answered = document.querySelectorAll('#quiz-container .quiz-card[data-answered="true"]').length;
-      if (answered < total) {
-        verificationResult.textContent = `⚠️ Please answer all ${total} questions before submitting.`;
+      // Check if at least 5 questions have been answered
+      if (answered < 5) {
+        verificationResult.textContent = `⚠️ Please answer at least 5 questions before submitting. (${answered}/${total} answered)`;
         verificationResult.className = 'text-amber-400 text-sm font-semibold text-center';
         return;
       }
-      // Count correct answers
+      // Count correct among all answered
       let correct = 0;
       verificationQuestions.forEach((q, idx) => {
         const card = document.getElementById(`vq-${idx}`);
@@ -749,7 +742,7 @@
       const passed = correct >= 5;
       if (passed) {
         quizLocked = true;
-        verificationResult.textContent = `🎉 You got ${correct} out of ${total} correct! Verification passed! Unlocking features...`;
+        verificationResult.textContent = `🎉 You got ${correct} out of ${answered} answered (need 5). Verification passed!`;
         verificationResult.className = 'text-emerald-400 text-sm font-semibold text-center';
         localStorage.setItem('pungystudio_verified', 'true');
         logMessage('Verification passed!', 'success');
@@ -761,11 +754,10 @@
           alreadyVerified = true;
         }, 600);
       } else {
-        verificationResult.textContent = `❌ You got ${correct} out of ${total} correct. Need 5 to pass. Please retry.`;
+        verificationResult.textContent = `❌ You got ${correct} correct out of ${answered} answered. Need 5 to pass. Retry.`;
         verificationResult.className = 'text-red-400 text-sm font-semibold text-center';
         retryVerificationBtn.classList.remove('hidden');
         logMessage('Verification failed: ' + correct + ' correct', 'error');
-        // Enable retry
         submitVerificationBtn.disabled = false;
       }
     }
@@ -780,7 +772,7 @@
         const questions = await generateVerificationQuiz(geminiApiKey);
         verificationQuestions = questions;
         renderVerificationQuiz(questions);
-        verificationResult.textContent = `New quiz ready (${questions.length} questions). Answer all, then submit.`;
+        verificationResult.textContent = `New quiz ready (${questions.length} questions). Answer at least 5 to submit.`;
         verificationResult.className = 'text-slate-300 text-sm font-semibold text-center';
         setStatus(true, 'Quiz ready');
         submitVerificationBtn.disabled = false;
@@ -838,7 +830,6 @@
           retryVerificationBtn.classList.add('hidden');
         }
       };
-      // Submit button event
       submitVerificationBtn.addEventListener('click', submitVerification);
       retryVerificationBtn.addEventListener('click', refreshVerificationQuiz);
     }
@@ -1481,7 +1472,6 @@
     });
 
     // ─── AI Merge (Synthesize) ───
-    // Merge file handling (drop/click)
     mergeZone.addEventListener('click', () => mergeFileInput.click());
     mergeFileInput.addEventListener('change', (e) => handleMergeFiles(e.target.files));
     ['dragenter','dragover'].forEach(ev => {
@@ -1568,7 +1558,6 @@
       });
     }
 
-    // Synthesize button
     mergeSynthesizeBtn.addEventListener('click', async () => {
       if (mergeFiles.length < 2) {
         showError('Please add at least 2 files to merge.');
@@ -1609,9 +1598,7 @@
         let prompt = `You are an expert document synthesizer. You are given multiple documents. Your task is to merge them into a single, coherent, well-structured document. Remove duplicate information, group related topics together, add appropriate headings, and produce a unified narrative. The final output should be a clean HTML document suitable for study or reference. Use Tailwind CSS classes for styling.`;
         prompt += `\n\nHere are the documents:\n${combinedText}`;
 
-        // Build parts: first text, then any fileData
         const requestParts = [{ text: prompt }];
-        // Add fileData parts (for PDFs)
         for (let f of mergeFiles) {
           if (f.fileData) {
             requestParts.push({
@@ -1659,7 +1646,6 @@
       }
     });
 
-    // Download synthesized as .docx
     mergeDownloadBtn.addEventListener('click', async () => {
       if (!window.synthesizedContent) {
         showError('No synthesized content to download.');
@@ -1695,4 +1681,4 @@
     initApp();
   </script>
 </body>
-  </html>
+            </html>
