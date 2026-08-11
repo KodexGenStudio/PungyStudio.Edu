@@ -186,7 +186,6 @@
     #activity-log .log-entry.error { color: #f87171; }
     #activity-log .log-entry.warning { color: #fbbf24; }
     .log-timestamp { color: var(--text-secondary); opacity: 0.5; margin-right: 0.5rem; }
-    /* shiny siri wave glow */
     .siri-wave.glow .bar {
       box-shadow: 0 0 20px rgba(99, 102, 241, 0.8), 0 0 40px rgba(99, 102, 241, 0.4);
     }
@@ -199,6 +198,23 @@
       max-height: 400px;
       overflow-y: auto;
     }
+    .radio-label {
+      cursor: pointer;
+      transition: all var(--transition);
+      pointer-events: auto;
+    }
+    .radio-label:hover { background: var(--bg-secondary); }
+    .radio-label input[type="radio"] {
+      cursor: pointer;
+      accent-color: #818cf8;
+      width: 1.1rem;
+      height: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+      pointer-events: none;
+    }
+    .correct-answer { border-color: #10b981 !important; background: var(--correct-bg) !important; }
+    .wrong-answer { border-color: #ef4444 !important; background: var(--wrong-bg) !important; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center py-6 px-4">
@@ -210,7 +226,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider shadow-lg">Pungystudio AI</span>
-          <span class="text-xs text-slate-400 font-mono">v5.3 Pro</span>
+          <span class="text-xs text-slate-400 font-mono">v5.4 Pro</span>
         </div>
         <h1 class="text-2xl font-bold text-white mt-1">Document &amp; AI Study Suite</h1>
       </div>
@@ -273,8 +289,11 @@
         <div id="progress-fill" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2.5 rounded-full transition-all duration-500" style="width:0%"></div>
       </div>
       <div id="quiz-container" class="space-y-4"></div>
-      <div id="verification-result" class="mt-6 text-sm font-semibold text-center"></div>
-      <button id="retry-verification-btn" class="hidden mt-4 text-xs text-slate-400 hover:text-white underline mx-auto block transition-colors">Generate new quiz &amp; retry</button>
+      <div class="mt-6 flex flex-wrap items-center justify-center gap-4">
+        <button id="submit-verification-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm hover:scale-105">Submit Answers</button>
+        <span id="verification-result" class="text-sm font-semibold"></span>
+        <button id="retry-verification-btn" class="hidden text-xs text-slate-400 hover:text-white underline transition-colors">Generate new quiz &amp; retry</button>
+      </div>
     </div>
 
     <!-- MAIN WORKSPACE -->
@@ -467,7 +486,7 @@
 
   <script>
     // ════════════════════════════════════════════════════════════════
-    // Pungystudio AI – v5.3 Pro – AI Merge replaces normal merge
+    // Pungystudio AI – v5.4 Pro – Verification submit button restored
     // ════════════════════════════════════════════════════════════════
 
     const JSON_BIN_ID = '6a7a4f06da38895dfed2f54d';
@@ -477,7 +496,8 @@
     const $ = id => document.getElementById(id);
     const landingPage = $('landing-page'), getStartedBtn = $('get-started-btn'), landingSubtext = $('landing-subtext');
     const verificationOverlay = $('verification-overlay'), quizContainer = $('quiz-container'), verificationResult = $('verification-result');
-    const retryVerificationBtn = $('retry-verification-btn'), mainWorkspace = $('main-workspace'), statusDot = $('status-dot'), statusText = $('status-text');
+    const submitVerificationBtn = $('submit-verification-btn'), retryVerificationBtn = $('retry-verification-btn');
+    const mainWorkspace = $('main-workspace'), statusDot = $('status-dot'), statusText = $('status-text');
     const progressFill = $('progress-fill'), hzValue = $('hz-value'), apiFallback = $('api-fallback'), userApiKeyInput = $('user-api-key');
     const saveApiKeyBtn = $('save-api-key-btn'), mergeZone = $('merge-zone'), mergeFileInput = $('merge-file-input'), mergeFileList = $('merge-file-list');
     const mergeSynthesizeBtn = $('merge-synthesize-btn'), mergeProgress = $('merge-progress'), mergeResult = $('merge-result'), mergePreview = $('merge-preview');
@@ -517,7 +537,7 @@
     let rawFileText = '', originalViewerHtml = '';
     let verificationQuestions = [], verificationScore = 0, answeredCount = 0, quizLocked = false;
     let examMode = 'instant', examTimeLimit = 0, examTimer = null, examTimeLeft = 0, examSubmitted = false, examQuestions = [], userAnswers = {};
-    let mergeFiles = []; // array of { name, content }
+    let mergeFiles = [];
     let uploadedFileData = null;
     let pdfProcessedContent = null;
 
@@ -635,6 +655,11 @@
       quizContainer.innerHTML = '';
       verificationScore = 0; answeredCount = 0; quizLocked = false;
       progressFill.style.width = '0%';
+      // Hide retry button
+      retryVerificationBtn.classList.add('hidden');
+      verificationResult.textContent = '';
+      submitVerificationBtn.disabled = false;
+
       questions.forEach((q, idx) => {
         const card = document.createElement('div');
         card.className = 'quiz-card glass rounded-xl p-4 space-y-2 animate-fade-up';
@@ -656,83 +681,109 @@
         quizContainer.appendChild(card);
       });
 
+      // Attach click to labels – just update UI, don't auto-submit
       quizContainer.querySelectorAll('.radio-label').forEach(label => {
         label.addEventListener('click', function(e) {
           const radio = this.querySelector('input[type="radio"]');
           if (!radio) return;
           radio.checked = true;
-          handleVerificationAnswer(radio);
+          // Update UI: highlight selection, show feedback but don't submit yet
+          const qIndex = parseInt(radio.dataset.q);
+          const selected = radio.value;
+          const question = verificationQuestions[qIndex];
+          const card = document.getElementById(`vq-${qIndex}`);
+          const feedback = document.getElementById(`vq-feedback-${qIndex}`);
+          // If already answered, ignore
+          if (card.dataset.answered === 'true' || quizLocked) {
+            radio.checked = false;
+            return;
+          }
+          // Disable other radios in this question
+          const radios = card.querySelectorAll('input[type="radio"]');
+          radios.forEach(r => r.disabled = true);
+          const isCorrect = (selected === question.answer);
+          const label = card.querySelector(`#lbl-${qIndex}-${selected.replace(/\s/g,'')}`);
+          if (label) {
+            if (isCorrect) {
+              label.classList.add('correct-answer');
+              feedback.textContent = '✅ Correct!';
+              feedback.className = 'text-xs mt-2 text-emerald-400';
+            } else {
+              label.classList.add('wrong-answer');
+              const correctLabel = card.querySelector(`#lbl-${qIndex}-${question.answer.replace(/\s/g,'')}`);
+              if (correctLabel) correctLabel.classList.add('correct-answer');
+              feedback.textContent = `❌ Incorrect. The correct answer is: ${question.answer}`;
+              feedback.className = 'text-xs mt-2 text-red-400';
+            }
+          }
+          feedback.classList.remove('hidden');
+          card.dataset.answered = 'true';
+          answeredCount++;
+          // Update progress
+          progressFill.style.width = (answeredCount / verificationQuestions.length * 100) + '%';
+          // Enable submit button if all answered? We'll keep it always enabled.
         });
       });
     }
 
-    // ─── Handle Verification Answer ───
-    window.handleVerificationAnswer = function(radio) {
-      const qIndex = parseInt(radio.dataset.q);
-      const selected = radio.value;
-      const question = verificationQuestions[qIndex];
-      const card = document.getElementById(`vq-${qIndex}`);
-      const feedback = document.getElementById(`vq-feedback-${qIndex}`);
-      if (card.dataset.answered === 'true' || quizLocked) { radio.checked = false; return; }
-      const radios = card.querySelectorAll('input[type="radio"]');
-      radios.forEach(r => r.disabled = true);
-      const isCorrect = (selected === question.answer);
-      const label = card.querySelector(`#lbl-${qIndex}-${selected.replace(/\s/g,'')}`);
-      if (label) {
-        if (isCorrect) {
-          label.classList.add('correct-answer');
-          feedback.textContent = '✅ Correct!';
-          feedback.className = 'text-xs mt-2 text-emerald-400';
-          verificationScore++;
-        } else {
-          label.classList.add('wrong-answer');
-          const correctLabel = card.querySelector(`#lbl-${qIndex}-${question.answer.replace(/\s/g,'')}`);
-          if (correctLabel) correctLabel.classList.add('correct-answer');
-          feedback.textContent = `❌ Incorrect. Answer: ${question.answer}`;
-          feedback.className = 'text-xs mt-2 text-red-400';
-        }
+    // ─── Submit Verification ───
+    function submitVerification() {
+      if (quizLocked) return;
+      // Check if all questions are answered
+      const total = verificationQuestions.length;
+      const answered = document.querySelectorAll('#quiz-container .quiz-card[data-answered="true"]').length;
+      if (answered < total) {
+        verificationResult.textContent = `⚠️ Please answer all ${total} questions before submitting.`;
+        verificationResult.className = 'text-amber-400 text-sm font-semibold text-center';
+        return;
       }
-      feedback.classList.remove('hidden');
-      card.dataset.answered = 'true';
-      answeredCount++;
-      progressFill.style.width = (answeredCount / verificationQuestions.length * 100) + '%';
-      if (answeredCount === verificationQuestions.length) {
-        if (verificationScore >= 5) {
-          quizLocked = true;
-          verificationResult.textContent = '🎉 You passed! Unlocking...';
-          verificationResult.className = 'text-emerald-400 text-sm font-semibold text-center';
-          localStorage.setItem('pungystudio_verified', 'true');
-          logMessage('Verification passed!', 'success');
-          setTimeout(() => {
-            verificationOverlay.classList.add('hidden');
-            mainWorkspace.classList.remove('hidden');
-            setStatus(true, 'Verified');
-            alreadyVerified = true;
-          }, 600);
-        } else {
-          verificationResult.textContent = `❌ You got ${verificationScore} correct. Need 5. Retry.`;
-          verificationResult.className = 'text-red-400 text-sm font-semibold text-center';
-          retryVerificationBtn.classList.remove('hidden');
-          logMessage('Verification failed: ' + verificationScore + ' correct', 'error');
+      // Count correct answers
+      let correct = 0;
+      verificationQuestions.forEach((q, idx) => {
+        const card = document.getElementById(`vq-${idx}`);
+        const selectedRadio = card.querySelector('input[type="radio"]:checked');
+        if (selectedRadio && selectedRadio.value === q.answer) {
+          correct++;
         }
+      });
+      const passed = correct >= 5;
+      if (passed) {
+        quizLocked = true;
+        verificationResult.textContent = `🎉 You got ${correct} out of ${total} correct! Verification passed! Unlocking features...`;
+        verificationResult.className = 'text-emerald-400 text-sm font-semibold text-center';
+        localStorage.setItem('pungystudio_verified', 'true');
+        logMessage('Verification passed!', 'success');
+        submitVerificationBtn.disabled = true;
+        setTimeout(() => {
+          verificationOverlay.classList.add('hidden');
+          mainWorkspace.classList.remove('hidden');
+          setStatus(true, 'Verified');
+          alreadyVerified = true;
+        }, 600);
       } else {
-        verificationResult.textContent = `Answered ${answeredCount}/${verificationQuestions.length}. Score: ${verificationScore}`;
-        verificationResult.className = 'text-slate-300 text-sm font-semibold text-center';
+        verificationResult.textContent = `❌ You got ${correct} out of ${total} correct. Need 5 to pass. Please retry.`;
+        verificationResult.className = 'text-red-400 text-sm font-semibold text-center';
+        retryVerificationBtn.classList.remove('hidden');
+        logMessage('Verification failed: ' + correct + ' correct', 'error');
+        // Enable retry
+        submitVerificationBtn.disabled = false;
       }
-    };
+    }
 
     // ─── Retry Verification ───
     async function refreshVerificationQuiz() {
       verificationResult.textContent = 'Generating new quiz...';
       retryVerificationBtn.classList.add('hidden');
+      submitVerificationBtn.disabled = true;
       setStatus(false, 'Generating...');
       try {
         const questions = await generateVerificationQuiz(geminiApiKey);
         verificationQuestions = questions;
         renderVerificationQuiz(questions);
-        verificationResult.textContent = `New quiz ready (${questions.length} questions). Answer all.`;
+        verificationResult.textContent = `New quiz ready (${questions.length} questions). Answer all, then submit.`;
         verificationResult.className = 'text-slate-300 text-sm font-semibold text-center';
         setStatus(true, 'Quiz ready');
+        submitVerificationBtn.disabled = false;
       } catch (err) {
         verificationResult.textContent = 'Error: ' + err.message;
         verificationResult.className = 'text-red-400 text-sm font-semibold text-center';
@@ -787,6 +838,8 @@
           retryVerificationBtn.classList.add('hidden');
         }
       };
+      // Submit button event
+      submitVerificationBtn.addEventListener('click', submitVerification);
       retryVerificationBtn.addEventListener('click', refreshVerificationQuiz);
     }
 
@@ -1461,11 +1514,8 @@
                 content = result.value;
               } catch (err) { reject(err); }
             } else if (ext === 'pdf') {
-              // For PDFs we can't extract text easily; we'll use the PDF as inlineData in the prompt later
-              // For now we store the base64 data
               const base64 = e.target.result.split(',')[1];
               content = '[PDF content – will be processed by AI]';
-              // Store file data for later use
               const fileData = { base64, mimeType: 'application/pdf', name: file.name };
               resolve({ name: file.name, content, fileData });
               return;
@@ -1493,7 +1543,6 @@
         mergeSynthesizeBtn.disabled = false;
         hideError();
         logMessage(`Added ${results.length} file(s) for AI merge.`, 'success');
-        // Hide previous result
         mergeResult.classList.add('hidden');
       } catch (err) {
         showError('Error reading merge files: ' + err.message);
@@ -1525,7 +1574,6 @@
         showError('Please add at least 2 files to merge.');
         return;
       }
-      // Show loading with shiny siri wave
       mergeProgress.classList.remove('hidden');
       mergeResult.classList.add('hidden');
       mergeProgress.innerHTML = `
@@ -1542,28 +1590,8 @@
       logMessage('Starting AI synthesis...', 'info');
 
       try {
-        // Build prompt with all file contents
         let combinedText = '';
-        const fileDataList = [];
-        for (let f of mergeFiles) {
-          if (f.fileData) {
-            // For PDF, we need to pass as inlineData in the API call
-            fileDataList.push(f.fileData);
-            combinedText += `\n\n--- PDF: ${f.name} ---\n[PDF content will be analyzed by AI]`;
-          } else {
-            combinedText += `\n\n--- File: ${f.name} ---\n${f.content}`;
-          }
-        }
-
-        // If we have PDFs, we'll send them as inlineData along with text prompt
-        let prompt = `You are an expert document synthesizer. You are given multiple documents. Your task is to merge them into a single, coherent, well-structured document. Remove duplicate information, group related topics together, add appropriate headings, and produce a unified narrative. The final output should be a clean HTML document suitable for study or reference. Use Tailwind CSS classes for styling.`;
-        prompt += `\n\nHere are the documents:\n${combinedText}`;
-
-        let fileData = null;
-        // If we have exactly one PDF and no other files, we can send it as fileData
-        // But here we may have multiple PDFs – we'll just send the first one? Actually Gemini can handle multiple inlineData in one request, but we'll simplify: send all PDFs as parts.
-        // We'll construct parts: first text part, then each PDF as inlineData.
-        const parts = [{ text: prompt }];
+        const parts = [];
         for (let f of mergeFiles) {
           if (f.fileData) {
             parts.push({
@@ -1572,14 +1600,33 @@
                 data: f.fileData.base64
               }
             });
+            combinedText += `\n\n--- PDF: ${f.name} ---\n[PDF content included as image]`;
+          } else {
+            combinedText += `\n\n--- File: ${f.name} ---\n${f.content}`;
           }
         }
 
-        // Call Gemini with multiple parts
+        let prompt = `You are an expert document synthesizer. You are given multiple documents. Your task is to merge them into a single, coherent, well-structured document. Remove duplicate information, group related topics together, add appropriate headings, and produce a unified narrative. The final output should be a clean HTML document suitable for study or reference. Use Tailwind CSS classes for styling.`;
+        prompt += `\n\nHere are the documents:\n${combinedText}`;
+
+        // Build parts: first text, then any fileData
+        const requestParts = [{ text: prompt }];
+        // Add fileData parts (for PDFs)
+        for (let f of mergeFiles) {
+          if (f.fileData) {
+            requestParts.push({
+              inlineData: {
+                mimeType: f.fileData.mimeType,
+                data: f.fileData.base64
+              }
+            });
+          }
+        }
+
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts }] })
+          body: JSON.stringify({ contents: [{ parts: requestParts }] })
         });
         if (!response.ok) {
           const err = await response.json();
@@ -1597,13 +1644,10 @@
         if (cleaned.startsWith('```html')) cleaned = cleaned.replace(/^```html/,'').replace(/```$/,'').trim();
         else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/,'').replace(/```$/,'').trim();
 
-        // Show result
         mergeProgress.classList.add('hidden');
         mergeResult.classList.remove('hidden');
         mergePreview.innerHTML = cleaned;
         logMessage('AI synthesis completed.', 'success');
-
-        // Store for download
         window.synthesizedContent = cleaned;
 
       } catch (err) {
@@ -1622,8 +1666,7 @@
         return;
       }
       try {
-        const { Document, Packer, Paragraph, TextRun, HeadingLevel } = docx;
-        // Extract text from HTML
+        const { Document, Packer, Paragraph, TextRun } = docx;
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = window.synthesizedContent;
         const textContent = tempDiv.textContent || tempDiv.innerText || '';
@@ -1652,4 +1695,4 @@
     initApp();
   </script>
 </body>
-                    </html>
+  </html>
