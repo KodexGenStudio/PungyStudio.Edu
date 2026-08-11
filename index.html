@@ -6,32 +6,32 @@
   <title>Pungystudio AI – Verified Document Suite</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.0.0/build/index.min.js"></script>
   <style>
-    /* Theme variables – adapt to system preference */
+    /* ─── Theme ─── */
     :root {
       --bg-primary: #0f172a;
       --bg-secondary: #1e293b;
-      --bg-card: #0f172a / 0.7;
       --text-primary: #f1f5f9;
       --text-secondary: #94a3b8;
       --border-color: #334155;
       --glass-bg: rgba(15, 23, 42, 0.7);
-      --glass-border: rgba(99, 102, 241, 0.2);
-      --card-bg: #1e293b / 0.5;
+      --glass-border: rgba(99, 102, 241, 0.25);
+      --shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
       --correct-bg: rgba(16, 185, 129, 0.15);
       --wrong-bg: rgba(239, 68, 68, 0.15);
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     @media (prefers-color-scheme: light) {
       :root {
         --bg-primary: #f1f5f9;
         --bg-secondary: #e2e8f0;
-        --bg-card: #ffffff / 0.8;
         --text-primary: #0f172a;
         --text-secondary: #475569;
         --border-color: #cbd5e1;
         --glass-bg: rgba(255, 255, 255, 0.7);
         --glass-border: rgba(99, 102, 241, 0.3);
-        --card-bg: #ffffff / 0.8;
+        --shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
         --correct-bg: rgba(16, 185, 129, 0.2);
         --wrong-bg: rgba(239, 68, 68, 0.2);
       }
@@ -39,86 +39,165 @@
     body {
       background-color: var(--bg-primary);
       color: var(--text-primary);
-      transition: background-color 0.3s, color 0.3s;
+      transition: background 0.3s, color 0.3s;
     }
     .glass {
       background: var(--glass-bg);
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow);
     }
     .gradient-text {
-      background: linear-gradient(135deg, #818cf8, #c084fc);
+      background: linear-gradient(135deg, #818cf8, #c084fc, #a78bfa);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      background-size: 200% 200%;
+      animation: shimmer 4s ease-in-out infinite;
     }
-    .correct-answer {
+    @keyframes shimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    .animate-fade-up { animation: fadeUp 0.5s ease-out forwards; }
+    .hover-lift { transition: transform var(--transition), box-shadow var(--transition); }
+    .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -12px rgba(99,102,241,0.3); }
+    .option-btn {
+      cursor: pointer;
+      transition: all var(--transition);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      text-align: left;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+    .option-btn:hover:not(.disabled) {
+      background: var(--bg-secondary);
+      border-color: #818cf8;
+    }
+    .option-btn.selected-correct {
       border-color: #10b981 !important;
       background: var(--correct-bg) !important;
     }
-    .wrong-answer {
+    .option-btn.selected-wrong {
       border-color: #ef4444 !important;
       background: var(--wrong-bg) !important;
     }
-    .quiz-card {
-      transition: all 0.2s ease;
+    .option-btn.show-correct {
+      border-color: #10b981 !important;
+      background: var(--correct-bg) !important;
     }
-    .border-slate-700 { border-color: var(--border-color); }
-    .bg-slate-800 { background-color: var(--bg-secondary); }
-    .bg-slate-900 { background-color: var(--bg-primary); }
-    .bg-slate-900\/50 { background-color: var(--bg-primary) / 0.5; }
-    .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-100 { color: var(--text-primary); }
-    .text-slate-400 { color: var(--text-secondary); }
-    .bg-slate-700 { background-color: var(--bg-secondary); }
-    .bg-slate-800\/80 { background-color: var(--bg-secondary) / 0.8; }
-    .bg-slate-800\/50 { background-color: var(--bg-secondary) / 0.5; }
-    .bg-slate-900\/80 { background-color: var(--bg-primary) / 0.8; }
-    .border-slate-700\/50 { border-color: var(--border-color) / 0.5; }
-    .bg-slate-800\/50 { background-color: var(--bg-secondary) / 0.5; }
-    .bg-slate-800\/80 { background-color: var(--bg-secondary) / 0.8; }
-    .bg-slate-700 { background-color: var(--bg-secondary); }
-    .bg-slate-800 { background-color: var(--bg-secondary); }
-    .bg-slate-900 { background-color: var(--bg-primary); }
-    .bg-slate-900\/50 { background-color: var(--bg-primary) / 0.5; }
-    /* Light mode overrides */
-    @media (prefers-color-scheme: light) {
-      .bg-slate-800\/50 { background-color: rgba(255,255,255,0.5); }
-      .bg-slate-800\/80 { background-color: rgba(255,255,255,0.8); }
-      .bg-slate-700 { background-color: #e2e8f0; }
-      .bg-slate-800 { background-color: #f1f5f9; }
-      .bg-slate-900 { background-color: #f8fafc; }
-      .bg-slate-900\/50 { background-color: rgba(248,250,252,0.5); }
-      .bg-slate-900\/80 { background-color: rgba(248,250,252,0.8); }
-      .border-slate-700 { border-color: #cbd5e1; }
-      .border-slate-700\/50 { border-color: #cbd5e1 / 0.5; }
-      .text-slate-400 { color: #475569; }
-      .text-slate-300 { color: #475569; }
-      .text-slate-200 { color: #0f172a; }
-      .text-slate-100 { color: #0f172a; }
-      .bg-slate-700 { background-color: #e2e8f0; }
-      .bg-slate-800 { background-color: #f1f5f9; }
-      .bg-slate-900 { background-color: #f8fafc; }
-      .bg-slate-900\/50 { background-color: rgba(248,250,252,0.5); }
-      .bg-slate-800\/80 { background-color: rgba(241,245,249,0.8); }
-      .glass { background: rgba(255,255,255,0.7); border-color: rgba(99,102,241,0.3); }
-      .bg-indigo-950\/60 { background-color: rgba(99,102,241,0.1); }
-      .border-indigo-800 { border-color: rgba(99,102,241,0.3); }
-      .text-indigo-300 { color: #6366f1; }
-      .bg-indigo-950\/40 { background-color: rgba(99,102,241,0.1); }
-      .border-indigo-900 { border-color: rgba(99,102,241,0.3); }
-      .bg-red-950\/50 { background-color: rgba(239,68,68,0.1); }
-      .border-red-800 { border-color: #ef4444; }
-      .text-red-200 { color: #ef4444; }
-    }
-    /* Ensures radio labels are clickable */
-    #questions-container label {
-      cursor: pointer;
-    }
-    #questions-container input[type="radio"] {
-      cursor: pointer;
-    }
-    .locked-radio {
+    .option-btn.disabled {
+      cursor: not-allowed;
       opacity: 0.6;
-      cursor: not-allowed !important;
+    }
+    .option-btn .option-letter {
+      display: inline-block;
+      width: 24px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    #drop-zone, #merge-zone {
+      border: 2px dashed var(--border-color);
+      transition: all var(--transition);
+    }
+    #drop-zone:hover, #drop-zone.dragover, #merge-zone:hover, #merge-zone.dragover {
+      border-color: #818cf8;
+      background: var(--bg-secondary);
+    }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .status-dot.ready { background: #10b981; }
+    .status-dot.pending { background: #f59e0b; animation: pulse 1.2s ease-in-out infinite; }
+    .status-dot.error { background: #ef4444; }
+    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.9); } }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb { background: #818cf8; border-radius: 8px; }
+    .btn-glow { position: relative; overflow: hidden; }
+    .btn-glow::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent 60%); pointer-events: none; }
+    .merge-file-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--bg-secondary); border-radius: 0.5rem; margin-bottom: 0.25rem; border: 1px solid var(--border-color); }
+    .siri-wave {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 80px;
+      gap: 8px;
+    }
+    .siri-wave .bar {
+      width: 8px;
+      height: 20px;
+      background: linear-gradient(to top, #818cf8, #c084fc);
+      border-radius: 4px;
+      animation: wave 1.2s ease-in-out infinite alternate;
+      transform-origin: bottom;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+    }
+    .siri-wave .bar:nth-child(1) { animation-delay: 0.0s; height: 20px; }
+    .siri-wave .bar:nth-child(2) { animation-delay: 0.1s; height: 30px; }
+    .siri-wave .bar:nth-child(3) { animation-delay: 0.2s; height: 50px; }
+    .siri-wave .bar:nth-child(4) { animation-delay: 0.3s; height: 70px; }
+    .siri-wave .bar:nth-child(5) { animation-delay: 0.4s; height: 80px; }
+    .siri-wave .bar:nth-child(6) { animation-delay: 0.5s; height: 70px; }
+    .siri-wave .bar:nth-child(7) { animation-delay: 0.6s; height: 50px; }
+    .siri-wave .bar:nth-child(8) { animation-delay: 0.7s; height: 30px; }
+    .siri-wave .bar:nth-child(9) { animation-delay: 0.8s; height: 20px; }
+    @keyframes wave {
+      0% { transform: scaleY(0.3); opacity: 0.4; }
+      100% { transform: scaleY(1); opacity: 1; }
+    }
+    .loading-overlay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      gap: 20px;
+    }
+    .loading-text {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      animation: pulse-text 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-text {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    .pdf-viewer { width: 100%; height: 600px; border: none; border-radius: 0.75rem; }
+    #activity-log {
+      max-height: 150px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.75rem;
+      background: var(--bg-primary);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+    #activity-log .log-entry {
+      padding: 0.1rem 0;
+      border-bottom: 1px solid var(--border-color);
+      opacity: 0.8;
+    }
+    #activity-log .log-entry:last-child { border-bottom: none; }
+    #activity-log .log-entry.info { color: #60a5fa; }
+    #activity-log .log-entry.success { color: #34d399; }
+    #activity-log .log-entry.error { color: #f87171; }
+    #activity-log .log-entry.warning { color: #fbbf24; }
+    .log-timestamp { color: var(--text-secondary); opacity: 0.5; margin-right: 0.5rem; }
+    /* shiny siri wave glow */
+    .siri-wave.glow .bar {
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.8), 0 0 40px rgba(99, 102, 241, 0.4);
+    }
+    .merge-preview {
+      background: var(--bg-primary);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      margin-top: 1rem;
+      border: 1px solid var(--border-color);
+      max-height: 400px;
+      overflow-y: auto;
     }
   </style>
 </head>
@@ -126,61 +205,54 @@
 
   <div class="w-full max-w-5xl">
 
-    <!-- HEADER with Refresh Rate -->
-    <header class="flex items-center justify-between mb-6">
+    <!-- HEADER -->
+    <header class="flex items-center justify-between mb-6 animate-fade-up">
       <div>
         <div class="flex items-center space-x-2">
-          <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Pungystudio AI</span>
-          <span class="text-xs text-slate-400 font-mono">v4.5</span>
+          <span class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider shadow-lg">Pungystudio AI</span>
+          <span class="text-xs text-slate-400 font-mono">v5.3 Pro</span>
         </div>
-        <h1 class="text-2xl font-bold text-white mt-1">Document & AI Study Suite</h1>
+        <h1 class="text-2xl font-bold text-white mt-1">Document &amp; AI Study Suite</h1>
       </div>
       <div class="flex items-center space-x-4">
-        <!-- Refresh Rate -->
-        <span id="refresh-rate" class="text-xs text-slate-400 bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700">
-          <span id="hz-value">--</span>Hz
-        </span>
-        <!-- Status -->
-        <span id="status-badge" class="flex items-center space-x-2 text-xs bg-slate-700 rounded-full px-3 py-1.5">
-          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" id="status-dot"></span>
+        <span class="text-xs text-slate-400 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 shadow-inner"><span id="hz-value">--</span>Hz</span>
+        <span class="flex items-center space-x-2 text-xs bg-slate-800/80 rounded-full px-3 py-1.5 border border-slate-700 shadow-inner">
+          <span class="status-dot pending" id="status-dot"></span>
           <span id="status-text">Loading...</span>
         </span>
       </div>
     </header>
 
-    <!-- LANDING PAGE -->
-    <div id="landing-page" class="glass rounded-2xl p-8 md:p-12 text-center border border-indigo-500/20 shadow-xl">
+    <!-- LANDING -->
+    <div id="landing-page" class="glass rounded-3xl p-8 md:p-12 text-center border border-indigo-500/20 shadow-2xl animate-fade-up">
       <div class="max-w-3xl mx-auto">
         <h2 class="text-4xl md:text-5xl font-extrabold gradient-text">Welcome to Pungystudio AI</h2>
         <p class="text-slate-300 text-lg mt-3">Intelligent document processing, powered by Gemini 3.6 Flash</p>
         <div class="grid md:grid-cols-3 gap-4 mt-8 text-left">
-          <div class="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-indigo-500/50 transition-all">
+          <div class="glass rounded-xl p-5 border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-300 hover-lift">
             <div class="text-3xl mb-2">✨</div>
             <h3 class="font-bold text-white">AI‑ify</h3>
             <p class="text-xs text-slate-400 mt-1">Transform complex text into structured, tagged content.</p>
           </div>
-          <div class="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-indigo-500/50 transition-all">
+          <div class="glass rounded-xl p-5 border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-300 hover-lift">
             <div class="text-3xl mb-2">📄</div>
             <h3 class="font-bold text-white">Smart Summary</h3>
             <p class="text-xs text-slate-400 mt-1">Get an executive summary with key takeaways.</p>
           </div>
-          <div class="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-indigo-500/50 transition-all">
+          <div class="glass rounded-xl p-5 border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-300 hover-lift">
             <div class="text-3xl mb-2">📝</div>
             <h3 class="font-bold text-white">Exam Generator</h3>
             <p class="text-xs text-slate-400 mt-1">Auto‑generate multiple‑choice assessments.</p>
           </div>
         </div>
-        <button id="get-started-btn" class="mt-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-10 rounded-xl shadow-lg transition-all text-lg">
-          Get Started 🚀
-        </button>
+        <button id="get-started-btn" class="btn-glow mt-8 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3 px-10 rounded-xl shadow-xl transition-all duration-300 hover:scale-105 text-lg">Get Started 🚀</button>
         <p class="text-xs text-slate-400 mt-3" id="landing-subtext">You'll answer 10 computer‑abbreviation questions – need 5 correct to unlock.</p>
-        <!-- API fallback area (hidden initially) -->
-        <div id="api-fallback" class="hidden mt-6 p-4 border border-red-500/50 rounded-xl bg-red-950/30 text-left">
+        <div id="api-fallback" class="hidden mt-6 p-4 border border-red-500/50 rounded-xl bg-red-950/30 text-left animate-fade-up">
           <p class="text-sm text-red-300 font-semibold">⚠️ Gemini API key is invalid or quota exhausted.</p>
-          <p class="text-xs text-slate-300 mt-1">You can get your own free API key from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-indigo-400 underline">Google Cloud Console</a> and enter it below:</p>
+          <p class="text-xs text-slate-300 mt-1">Get your own free API key from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-indigo-400 underline hover:text-indigo-300">Google Cloud Console</a> and enter it below:</p>
           <div class="flex flex-col sm:flex-row gap-2 mt-3">
-            <input type="text" id="user-api-key" placeholder="Paste your API key here" class="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200" />
-            <button id="save-api-key-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm transition-colors">Use this key</button>
+            <input type="text" id="user-api-key" placeholder="Paste your API key here" class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <button id="save-api-key-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm transition-all duration-200">Use this key</button>
           </div>
           <p class="text-xs text-slate-400 mt-2">The key will be stored locally in your browser.</p>
         </div>
@@ -188,7 +260,7 @@
     </div>
 
     <!-- VERIFICATION QUIZ -->
-    <div id="verification-overlay" class="hidden glass rounded-2xl p-6 md:p-8 mt-6 border border-indigo-500/30">
+    <div id="verification-overlay" class="hidden glass rounded-3xl p-6 md:p-8 mt-6 border border-indigo-500/30 animate-fade-up">
       <div class="flex items-center gap-3 mb-6">
         <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
@@ -196,67 +268,93 @@
         <h2 class="text-xl font-bold text-white">Human Verification</h2>
         <span class="ml-auto text-xs text-indigo-300 bg-indigo-950/60 px-3 py-1 rounded-full border border-indigo-800">Pungystudio AI</span>
       </div>
-      <p class="text-sm text-slate-300 mb-4">Answer the following 10 computer‑related questions. Each answer is checked instantly. You need <span class="font-semibold text-indigo-400">5 correct</span> to unlock.</p>
-      <div class="w-full bg-slate-700 rounded-full h-2.5 mb-6">
-        <div id="progress-fill" class="bg-indigo-500 h-2.5 rounded-full transition-all duration-300" style="width:0%"></div>
+      <p class="text-sm text-slate-300 mb-4">Answer all 10 questions. You need <span class="font-semibold text-indigo-400">5 correct</span> to unlock.</p>
+      <div class="w-full bg-slate-700 rounded-full h-2.5 mb-6 overflow-hidden">
+        <div id="progress-fill" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2.5 rounded-full transition-all duration-500" style="width:0%"></div>
       </div>
       <div id="quiz-container" class="space-y-4"></div>
       <div id="verification-result" class="mt-6 text-sm font-semibold text-center"></div>
-      <button id="retry-verification-btn" class="hidden mt-4 text-xs text-slate-400 hover:text-white underline mx-auto block">Generate new quiz & retry</button>
+      <button id="retry-verification-btn" class="hidden mt-4 text-xs text-slate-400 hover:text-white underline mx-auto block transition-colors">Generate new quiz &amp; retry</button>
     </div>
 
     <!-- MAIN WORKSPACE -->
-    <div id="main-workspace" class="hidden mt-6">
+    <div id="main-workspace" class="hidden mt-6 animate-fade-up">
       <!-- Upload -->
       <div id="upload-section">
-        <div id="drop-zone" class="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-slate-900/50">
+        <div id="drop-zone" class="rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 bg-slate-900/30">
           <input type="file" id="file-input" class="hidden" accept=".docx,.txt,.md,.json,.pdf,image/*" />
           <div class="flex flex-col items-center justify-center space-y-3">
-            <svg class="w-12 h-12 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-14 h-14 text-indigo-400 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.707.293V19a2 2 0 01-2 2z"/>
             </svg>
-            <p class="font-medium text-slate-200">Drag & drop your document or PDF here, or <span class="text-indigo-400 underline">browse</span></p>
-            <p class="text-xs text-slate-400">Supports Word (.docx), PDFs, Text (.txt), Markdown (.md), Images, and more.</p>
+            <p class="font-medium text-slate-200">Drag &amp; drop your document here, or <span class="text-indigo-400 underline hover:text-indigo-300 transition-colors">browse</span></p>
+            <p class="text-xs text-slate-400">PDF, Word (.docx), Text (.txt), Markdown, Images, and more</p>
           </div>
         </div>
       </div>
       <!-- Error -->
-      <div id="error-box" class="hidden mt-4 p-4 bg-red-950/50 border border-red-800 text-red-200 text-sm rounded-lg"></div>
+      <div id="error-box" class="hidden mt-4 p-4 bg-red-950/50 border border-red-800 text-red-200 text-sm rounded-xl animate-fade-up"></div>
+
+      <!-- AI Merge Documents -->
+      <div id="merge-section" class="mt-6 glass rounded-2xl border border-slate-700/50 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-white text-sm flex items-center gap-2">🧠 AI Merge &amp; Synthesize</h3>
+          <button id="merge-synthesize-btn" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium px-4 py-1.5 rounded-lg text-xs transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>AI Synthesize</button>
+        </div>
+        <div id="merge-zone" class="border-2 border-dashed border-slate-600 rounded-xl p-6 text-center cursor-pointer transition-all duration-300 bg-slate-900/20 hover:border-indigo-500">
+          <p class="text-xs text-slate-400">Drop multiple files (.txt, .md, .docx, .pdf) – AI will merge them intelligently</p>
+          <input type="file" id="merge-file-input" class="hidden" accept=".docx,.txt,.md,.pdf" multiple />
+        </div>
+        <div id="merge-file-list" class="mt-3 space-y-1 max-h-32 overflow-y-auto"></div>
+        <!-- AI Merge Progress / Result -->
+        <div id="merge-progress" class="hidden mt-3"></div>
+        <div id="merge-result" class="hidden mt-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-slate-400">Synthesized Document Preview</span>
+            <button id="merge-download-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3 py-1 rounded-lg text-xs transition-all duration-200">Download as .docx</button>
+          </div>
+          <div id="merge-preview" class="merge-preview text-slate-200 text-sm"></div>
+        </div>
+      </div>
+
       <!-- Workspace -->
       <div id="workspace-section" class="hidden mt-6 space-y-6">
         <!-- File bar -->
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-wrap items-center justify-between gap-4">
+        <div class="glass rounded-2xl p-4 border border-slate-700/50 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 class="font-semibold text-white text-sm" id="meta-name">filename.ext</h3>
             <p class="text-xs text-slate-400"><span id="meta-size">0 KB</span> • <span id="meta-type">Type</span></p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <button id="tab-viewer" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white">Document Viewer</button>
-            <button id="tab-summary" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">AI Summary</button>
-            <button id="tab-exam" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">AI Exam Generator</button>
-            <button id="change-file-btn" class="px-3 py-2 text-xs text-red-400 hover:bg-red-950/30 rounded-lg">Close File</button>
+            <button id="tab-viewer" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition-all duration-200">Document Viewer</button>
+            <button id="tab-summary" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200">AI Summary</button>
+            <button id="tab-exam" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200">AI Exam</button>
+            <button id="tab-keyconcepts" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200">Key Concepts</button>
+            <button id="change-file-btn" class="px-3 py-2 text-xs text-red-400 hover:bg-red-950/30 rounded-lg transition-colors">Close</button>
           </div>
         </div>
+
         <!-- Viewer -->
-        <div id="viewer-pane" class="border border-slate-700 rounded-xl bg-slate-900 p-6 space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-800/80 p-3 rounded-lg border border-slate-700">
-            <span class="text-xs text-slate-300 font-medium">Want to make this complex file easier? AI‑ify it with tags and structure.</span>
-            <button id="ai-ify-btn" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition-all text-xs flex items-center space-x-2">
+        <div id="viewer-pane" class="glass rounded-2xl border border-slate-700/50 p-6 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+            <span class="text-xs text-slate-300 font-medium">AI‑ify with tags and structure</span>
+            <button id="ai-ify-btn" class="btn-glow bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold px-4 py-2 rounded-lg shadow-xl transition-all duration-300 text-xs flex items-center space-x-2 hover:scale-105">
               <svg class="w-3.5 h-3.5 animate-spin hidden" id="ai-spinner" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span id="ai-btn-text">AI-ify 😂</span>
+              <span id="ai-btn-text">AI-ify ✨</span>
             </button>
           </div>
           <div id="viewer-content" class="min-h-[400px] max-h-[600px] overflow-y-auto pr-2 text-slate-200"></div>
         </div>
+
         <!-- Summary -->
-        <div id="summary-pane" class="hidden border border-slate-700 rounded-xl bg-slate-900 p-6 min-h-[450px]">
-          <div id="summary-intro" class="text-center py-12 space-y-4">
+        <div id="summary-pane" class="hidden glass rounded-2xl border border-slate-700/50 p-6 min-h-[450px]">
+          <div id="summary-intro" class="text-center py-12 space-y-4 animate-fade-up">
             <h3 class="text-xl font-bold text-white">Comprehensive Document Summary</h3>
             <p class="text-sm text-slate-400 max-w-md mx-auto">Generate a deep, structural executive summary with core takeaways and topic breakdowns.</p>
-            <button id="generate-summary-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm flex items-center justify-center space-x-2 mx-auto">
+            <button id="generate-summary-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
               <svg class="w-4 h-4 animate-spin hidden" id="summary-spinner" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -264,56 +362,54 @@
               <span id="summary-btn-text">Generate AI Summary</span>
             </button>
           </div>
-          <div id="summary-active-area" class="hidden space-y-4">
+          <div id="summary-active-area" class="hidden space-y-4 animate-fade-up">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h4 class="font-semibold text-white text-base">Executive Document Summary</h4>
-              <button id="regen-summary-btn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg">Regenerate Summary</button>
+              <h4 class="font-semibold text-white text-base">Executive Summary</h4>
+              <button id="regen-summary-btn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition-all duration-200">Regenerate</button>
             </div>
             <div id="summary-content" class="text-slate-200 space-y-4 max-h-[550px] overflow-y-auto pr-2"></div>
           </div>
         </div>
+
         <!-- Exam -->
-        <div id="exam-pane" class="hidden border border-slate-700 rounded-xl bg-slate-900 p-6 min-h-[450px]">
-          <!-- Intro -->
-          <div id="exam-intro" class="text-center py-12 space-y-4">
-            <h3 class="text-xl font-bold text-white">Comprehensive AI Exam Generator</h3>
-            <p class="text-sm text-slate-400 max-w-md mx-auto">Pungystudio AI will analyze the full document to generate a complete set of thorough multiple‑choice questions.</p>
-            <button id="generate-exam-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm flex items-center justify-center space-x-2 mx-auto">
+        <div id="exam-pane" class="hidden glass rounded-2xl border border-slate-700/50 p-6 min-h-[450px]">
+          <div id="exam-intro" class="text-center py-12 space-y-4 animate-fade-up">
+            <h3 class="text-xl font-bold text-white">AI Exam Generator</h3>
+            <p class="text-sm text-slate-400 max-w-md mx-auto">Generate a complete multiple‑choice assessment from your document.</p>
+            <button id="generate-exam-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
               <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span id="exam-btn-text">Generate Full Assessment Exam</span>
+              <span id="exam-btn-text">Generate Exam</span>
             </button>
           </div>
 
-          <!-- Settings (shown after generation) -->
-          <div id="exam-settings" class="hidden text-center py-6 space-y-6">
+          <div id="exam-settings" class="hidden text-center py-6 space-y-6 animate-fade-up">
             <h4 class="text-lg font-bold text-white">Exam Settings</h4>
             <div class="flex flex-wrap justify-center gap-6">
               <div>
                 <p class="text-sm font-semibold text-slate-300 mb-2">Feedback Mode</p>
-                <label class="block text-sm text-slate-200"><input type="radio" name="exam-mode" value="instant" checked class="mr-2"> Instant Answer</label>
-                <label class="block text-sm text-slate-200"><input type="radio" name="exam-mode" value="after" class="mr-2"> Answer After Exam</label>
+                <label class="block text-sm text-slate-200"><input type="radio" name="exam-mode" value="instant" checked class="mr-2 accent-indigo-500"> Instant Answer</label>
+                <label class="block text-sm text-slate-200"><input type="radio" name="exam-mode" value="after" class="mr-2 accent-indigo-500"> Answer After Exam</label>
               </div>
               <div>
                 <p class="text-sm font-semibold text-slate-300 mb-2">Time Limit</p>
-                <select id="timer-select" class="bg-slate-800 border border-slate-700 rounded px-3 py-1 text-sm text-slate-200">
+                <select id="timer-select" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   <option value="0">No timer</option>
-                  <option value="5">5 minutes</option>
-                  <option value="10" selected>10 minutes</option>
-                  <option value="15">15 minutes</option>
-                  <option value="20">20 minutes</option>
+                  <option value="5">5 min</option>
+                  <option value="10" selected>10 min</option>
+                  <option value="15">15 min</option>
+                  <option value="20">20 min</option>
                 </select>
               </div>
             </div>
-            <button id="start-exam-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm">Start Exam</button>
+            <button id="start-exam-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm hover:scale-105">Start Exam</button>
           </div>
 
-          <!-- Active exam area -->
-          <div id="exam-active-area" class="hidden space-y-6">
+          <div id="exam-active-area" class="hidden space-y-6 animate-fade-up">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h4 class="font-semibold text-white text-base" id="exam-title-header">Exam Assessment</h4>
+              <h4 class="font-semibold text-white text-base">Exam Assessment</h4>
               <div class="flex items-center gap-4">
                 <span id="total-questions-badge" class="text-xs bg-indigo-950 text-indigo-300 border border-indigo-800 px-2.5 py-1 rounded-full font-medium"></span>
                 <span id="timer-display" class="text-xs bg-red-950/60 text-red-300 border border-red-800 px-2.5 py-1 rounded-full font-mono hidden">⏱️ <span id="timer-count">00:00</span></span>
@@ -321,144 +417,139 @@
             </div>
             <div id="questions-container" class="space-y-6"></div>
             <div class="flex justify-end pt-4 border-t border-slate-800">
-              <button id="submit-exam-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-lg shadow transition-all text-sm">Submit Answers</button>
+              <button id="submit-exam-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm hover:scale-105">Submit Answers</button>
             </div>
           </div>
 
-          <!-- Results -->
-          <div id="results-area" class="hidden text-center py-8 space-y-3 bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+          <div id="results-area" class="hidden text-center py-8 space-y-3 glass rounded-2xl border border-slate-700/50 p-6 animate-fade-up">
             <h3 class="text-lg font-bold text-white">Assessment Results</h3>
             <div id="score-display" class="text-4xl font-extrabold text-indigo-400">0 / 0</div>
             <p id="score-feedback" class="text-sm text-slate-300"></p>
-            <button id="retake-btn" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg">Retake Exam</button>
+            <button id="retake-btn" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg transition-all duration-200">Retake Exam</button>
           </div>
         </div>
+
+        <!-- Key Concepts -->
+        <div id="keyconcepts-pane" class="hidden glass rounded-2xl border border-slate-700/50 p-6 min-h-[450px]">
+          <div id="keyconcepts-intro" class="text-center py-12 space-y-4 animate-fade-up">
+            <h3 class="text-xl font-bold text-white">📚 Key Concepts Extraction</h3>
+            <p class="text-sm text-slate-400 max-w-md mx-auto">Extract important terms, definitions, and key ideas from your document.</p>
+            <button id="generate-keyconcepts-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
+              <svg class="w-4 h-4 animate-spin hidden" id="keyconcepts-spinner" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span id="keyconcepts-btn-text">Extract Key Concepts</span>
+            </button>
+          </div>
+          <div id="keyconcepts-active" class="hidden space-y-4 animate-fade-up">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h4 class="font-semibold text-white text-base">Key Concepts &amp; Definitions</h4>
+              <button id="regen-keyconcepts-btn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition-all duration-200">Regenerate</button>
+            </div>
+            <div id="keyconcepts-content" class="text-slate-200 space-y-4 max-h-[550px] overflow-y-auto pr-2"></div>
+          </div>
+        </div>
+
       </div>
     </div>
+
+    <!-- ACTIVITY LOG -->
+    <div id="activity-log-container" class="mt-8 w-full glass rounded-2xl border border-slate-700/50 p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-xs font-semibold text-slate-400">📋 Activity Log</h4>
+        <button id="clear-log-btn" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Clear</button>
+      </div>
+      <div id="activity-log"></div>
+    </div>
+
   </div>
 
   <script>
-    // ================================================================
-    // Pungystudio AI – Full app with fixes & API fallback
-    // ================================================================
+    // ════════════════════════════════════════════════════════════════
+    // Pungystudio AI – v5.3 Pro – AI Merge replaces normal merge
+    // ════════════════════════════════════════════════════════════════
 
     const JSON_BIN_ID = '6a7a4f06da38895dfed2f54d';
     const JSON_BIN_MASTER_KEY = '$2a$10$ZNYJ5U7gGnDHeybG36ceCuxDwOrFwbogNGd7pytNwPwMaIsmuaEb.';
 
-    // DOM refs
-    const landingPage = document.getElementById('landing-page');
-    const getStartedBtn = document.getElementById('get-started-btn');
-    const landingSubtext = document.getElementById('landing-subtext');
-    const verificationOverlay = document.getElementById('verification-overlay');
-    const quizContainer = document.getElementById('quiz-container');
-    const verificationResult = document.getElementById('verification-result');
-    const retryVerificationBtn = document.getElementById('retry-verification-btn');
-    const mainWorkspace = document.getElementById('main-workspace');
-    const statusDot = document.getElementById('status-dot');
-    const statusText = document.getElementById('status-text');
-    const progressFill = document.getElementById('progress-fill');
-    const hzValue = document.getElementById('hz-value');
-    const apiFallback = document.getElementById('api-fallback');
-    const userApiKeyInput = document.getElementById('user-api-key');
-    const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+    // ─── DOM refs ───
+    const $ = id => document.getElementById(id);
+    const landingPage = $('landing-page'), getStartedBtn = $('get-started-btn'), landingSubtext = $('landing-subtext');
+    const verificationOverlay = $('verification-overlay'), quizContainer = $('quiz-container'), verificationResult = $('verification-result');
+    const retryVerificationBtn = $('retry-verification-btn'), mainWorkspace = $('main-workspace'), statusDot = $('status-dot'), statusText = $('status-text');
+    const progressFill = $('progress-fill'), hzValue = $('hz-value'), apiFallback = $('api-fallback'), userApiKeyInput = $('user-api-key');
+    const saveApiKeyBtn = $('save-api-key-btn'), mergeZone = $('merge-zone'), mergeFileInput = $('merge-file-input'), mergeFileList = $('merge-file-list');
+    const mergeSynthesizeBtn = $('merge-synthesize-btn'), mergeProgress = $('merge-progress'), mergeResult = $('merge-result'), mergePreview = $('merge-preview');
+    const mergeDownloadBtn = $('merge-download-btn'), dropZone = $('drop-zone'), fileInput = $('file-input'), uploadSection = $('upload-section');
+    const workspaceSection = $('workspace-section'), errorBox = $('error-box'), metaName = $('meta-name'), metaSize = $('meta-size'), metaType = $('meta-type');
+    const changeFileBtn = $('change-file-btn'), tabViewer = $('tab-viewer'), tabSummary = $('tab-summary'), tabExam = $('tab-exam');
+    const viewerPane = $('viewer-pane'), summaryPane = $('summary-pane'), examPane = $('exam-pane'), aiIfyBtn = $('ai-ify-btn');
+    const aiSpinner = $('ai-spinner'), aiBtnText = $('ai-btn-text'), viewerContent = $('viewer-content');
+    const generateSummaryBtn = $('generate-summary-btn'), summarySpinner = $('summary-spinner'), summaryBtnText = $('summary-btn-text');
+    const summaryIntro = $('summary-intro'), summaryActiveArea = $('summary-active-area'), summaryContent = $('summary-content');
+    const regenSummaryBtn = $('regen-summary-btn'), generateExamBtn = $('generate-exam-btn'), examSpinner = $('exam-spinner');
+    const examBtnText = $('exam-btn-text'), examIntro = $('exam-intro'), examSettings = $('exam-settings'), startExamBtn = $('start-exam-btn');
+    const timerSelect = $('timer-select'), examActiveArea = $('exam-active-area'), questionsContainer = $('questions-container');
+    const totalQuestionsBadge = $('total-questions-badge'), submitExamBtn = $('submit-exam-btn'), resultsArea = $('results-area');
+    const scoreDisplay = $('score-display'), scoreFeedback = $('score-feedback'), retakeBtn = $('retake-btn');
+    const timerDisplay = $('timer-display'), timerCount = $('timer-count');
+    const activityLog = $('activity-log'), clearLogBtn = $('clear-log-btn');
+    const tabKeyConcepts = $('tab-keyconcepts'), keyconceptsPane = $('keyconcepts-pane');
+    const generateKeyConceptsBtn = $('generate-keyconcepts-btn'), keyconceptsSpinner = $('keyconcepts-spinner');
+    const keyconceptsBtnText = $('keyconcepts-btn-text'), keyconceptsIntro = $('keyconcepts-intro');
+    const keyconceptsActive = $('keyconcepts-active'), keyconceptsContent = $('keyconcepts-content');
+    const regenKeyConceptsBtn = $('regen-keyconcepts-btn');
 
-    // ... all other DOM refs (same as before)
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const uploadSection = document.getElementById('upload-section');
-    const workspaceSection = document.getElementById('workspace-section');
-    const errorBox = document.getElementById('error-box');
-    const metaName = document.getElementById('meta-name');
-    const metaSize = document.getElementById('meta-size');
-    const metaType = document.getElementById('meta-type');
-    const changeFileBtn = document.getElementById('change-file-btn');
-    const tabViewer = document.getElementById('tab-viewer');
-    const tabSummary = document.getElementById('tab-summary');
-    const tabExam = document.getElementById('tab-exam');
-    const viewerPane = document.getElementById('viewer-pane');
-    const summaryPane = document.getElementById('summary-pane');
-    const examPane = document.getElementById('exam-pane');
-    const aiIfyBtn = document.getElementById('ai-ify-btn');
-    const aiSpinner = document.getElementById('ai-spinner');
-    const aiBtnText = document.getElementById('ai-btn-text');
-    const viewerContent = document.getElementById('viewer-content');
-    const generateSummaryBtn = document.getElementById('generate-summary-btn');
-    const summarySpinner = document.getElementById('summary-spinner');
-    const summaryBtnText = document.getElementById('summary-btn-text');
-    const summaryIntro = document.getElementById('summary-intro');
-    const summaryActiveArea = document.getElementById('summary-active-area');
-    const summaryContent = document.getElementById('summary-content');
-    const regenSummaryBtn = document.getElementById('regen-summary-btn');
-    const generateExamBtn = document.getElementById('generate-exam-btn');
-    const examSpinner = document.getElementById('exam-spinner');
-    const examBtnText = document.getElementById('exam-btn-text');
-    const examIntro = document.getElementById('exam-intro');
-    const examSettings = document.getElementById('exam-settings');
-    const startExamBtn = document.getElementById('start-exam-btn');
-    const timerSelect = document.getElementById('timer-select');
-    const examActiveArea = document.getElementById('exam-active-area');
-    const questionsContainer = document.getElementById('questions-container');
-    const totalQuestionsBadge = document.getElementById('total-questions-badge');
-    const submitExamBtn = document.getElementById('submit-exam-btn');
-    const resultsArea = document.getElementById('results-area');
-    const scoreDisplay = document.getElementById('score-display');
-    const scoreFeedback = document.getElementById('score-feedback');
-    const retakeBtn = document.getElementById('retake-btn');
-    const timerDisplay = document.getElementById('timer-display');
-    const timerCount = document.getElementById('timer-count');
+    // ─── Activity Log ───
+    function logMessage(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      const time = new Date().toLocaleTimeString();
+      entry.innerHTML = `<span class="log-timestamp">[${time}]</span>${message}`;
+      activityLog.appendChild(entry);
+      activityLog.scrollTop = activityLog.scrollHeight;
+    }
+    clearLogBtn.addEventListener('click', () => { activityLog.innerHTML = ''; });
 
-    // State
-    let geminiApiKey = '';
-    let isVerified = false;
-    let alreadyVerified = false;
-    let rawFileText = '';
-    let originalViewerHtml = '';
-    let quizData = [];
-    let userAnswers = {};
-    let verificationQuestions = [];
-    let verificationScore = 0;
-    let answeredCount = 0;
-    let quizLocked = false;
+    // ─── State ───
+    let geminiApiKey = '', isVerified = false, alreadyVerified = false;
+    let rawFileText = '', originalViewerHtml = '';
+    let verificationQuestions = [], verificationScore = 0, answeredCount = 0, quizLocked = false;
+    let examMode = 'instant', examTimeLimit = 0, examTimer = null, examTimeLeft = 0, examSubmitted = false, examQuestions = [], userAnswers = {};
+    let mergeFiles = []; // array of { name, content }
+    let uploadedFileData = null;
+    let pdfProcessedContent = null;
 
-    // Exam state
-    let examMode = 'instant';
-    let examTimeLimit = 0;
-    let examTimer = null;
-    let examTimeLeft = 0;
-    let examSubmitted = false;
-    let examQuestions = [];
-
-    // ------------------------------------------------------------------
-    // 0. Refresh Rate Detection
-    // ------------------------------------------------------------------
-    function detectRefreshRate() {
-      let frameCount = 0;
-      let startTime = performance.now();
+    // ─── Refresh Rate ───
+    (function detectRefreshRate() {
+      let frameCount = 0, startTime = performance.now(), lastHz = 60;
       function countFrames() {
         frameCount++;
         const elapsed = performance.now() - startTime;
         if (elapsed >= 1000) {
           const hz = Math.round(frameCount / (elapsed / 1000));
-          hzValue.textContent = hz;
-          frameCount = 0;
-          startTime = performance.now();
+          if (hz > 10) lastHz = hz;
+          hzValue.textContent = lastHz;
+          frameCount = 0; startTime = performance.now();
         }
         requestAnimationFrame(countFrames);
       }
       requestAnimationFrame(countFrames);
-    }
-    detectRefreshRate();
+    })();
 
-    // ------------------------------------------------------------------
-    // 1. Check verification status immediately
-    // ------------------------------------------------------------------
+    function setStatus(ready, text) {
+      statusDot.className = 'status-dot ' + (ready ? 'ready' : 'pending');
+      statusText.textContent = text;
+      logMessage(text, ready ? 'success' : 'info');
+    }
+
+    // ─── Verification Status ───
     function checkVerificationStatus() {
       const verified = localStorage.getItem('pungystudio_verified') === 'true';
       alreadyVerified = verified;
       if (verified) {
-        isVerified = true;
-        statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
-        statusText.textContent = 'Verified';
+        isVerified = true; setStatus(true, 'Verified');
         getStartedBtn.textContent = 'Go to Dashboard 🚀';
         landingSubtext.textContent = 'You are already verified. Click below to access the document suite.';
         const badge = document.createElement('span');
@@ -466,61 +557,55 @@
         badge.textContent = '✅ Verified';
         document.querySelector('#landing-page .gradient-text')?.after(badge);
       } else {
-        isVerified = false;
-        statusDot.className = 'w-2 h-2 rounded-full bg-amber-500';
-        statusText.textContent = 'Not verified';
+        isVerified = false; setStatus(false, 'Not verified');
         getStartedBtn.textContent = 'Get Started 🚀';
-        landingSubtext.textContent = 'You\'ll answer 10 computer‑abbreviation questions – need 5 correct to unlock.';
+        landingSubtext.textContent = 'Answer 10 questions – need 5 correct to unlock.';
       }
       landingPage.classList.remove('hidden');
       verificationOverlay.classList.add('hidden');
       mainWorkspace.classList.add('hidden');
     }
 
-    // ------------------------------------------------------------------
-    // 2. Fetch Gemini API Key (with fallback)
-    // ------------------------------------------------------------------
+    // ─── API Key ───
     async function fetchGeminiKey() {
-      // First check if user has stored their own key
       const userKey = localStorage.getItem('pungystudio_user_api_key');
       if (userKey) {
-        console.log('Using user-provided API key');
+        logMessage('Using user-provided API key', 'info');
         return userKey;
       }
-      // Otherwise fetch from JSON Bin
       try {
+        logMessage('Fetching API key from JSON Bin...', 'info');
         const url = `https://api.jsonbin.io/v3/b/${JSON_BIN_ID}/latest`;
         const response = await fetch(url, { headers: { 'X-Master-Key': JSON_BIN_MASTER_KEY } });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         const key = data.record.GEMINI_API_KEY;
         if (!key) throw new Error('No GEMINI_API_KEY found.');
+        logMessage('API key loaded from JSON Bin', 'success');
         return key;
       } catch (err) {
-        // If JSON Bin fails, show fallback UI
         apiFallback.classList.remove('hidden');
-        throw new Error('Failed to fetch API key from JSON Bin. Please enter your own key below.');
+        logMessage('Failed to fetch API key: ' + err.message, 'error');
+        throw new Error('Failed to fetch API key. Please enter your own key below.');
       }
     }
-
-    // Save user's own API key
     saveApiKeyBtn.addEventListener('click', () => {
       const key = userApiKeyInput.value.trim();
       if (key) {
         localStorage.setItem('pungystudio_user_api_key', key);
         apiFallback.classList.add('hidden');
-        // Reload the app to use new key
+        logMessage('User API key saved, reloading...', 'success');
         location.reload();
       } else {
+        logMessage('Please paste a valid API key.', 'warning');
         alert('Please paste a valid API key.');
       }
     });
 
-    // ------------------------------------------------------------------
-    // 3. Generate Verification Quiz
-    // ------------------------------------------------------------------
+    // ─── Generate Verification Quiz ───
     async function generateVerificationQuiz(apiKey) {
-      const prompt = `Create a 10-question multiple-choice quiz about common computer abbreviations (e.g., HDMI, CPU, VGA, FPS, USB, UFS, SSD, RAM, ROM, HDD, GPU, LAN, WAN, BIOS, PCI, etc.). Each question must have 4 options. Return as JSON array of objects with keys: "question", "options" (array of 4 strings), "answer" (correct option string). Only return valid JSON.`;
+      logMessage('Generating verification quiz...', 'info');
+      const prompt = `Create a 10-question multiple-choice quiz about common computer abbreviations (e.g., HDMI, CPU, VGA, FPS, USB, UFS, SSD, RAM, ROM, HDD, GPU, LAN, WAN, BIOS, PCI). Each question must have 4 options. Return as JSON array of objects with keys: "question", "options" (array of 4 strings), "answer" (correct option string). Only return valid JSON.`;
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -528,10 +613,10 @@
       });
       if (!response.ok) {
         const err = await response.json();
-        // If error indicates quota or key invalid, show fallback
-        if (response.status === 429 || response.status === 403 || response.status === 400) {
+        if ([429, 403, 400].includes(response.status)) {
           apiFallback.classList.remove('hidden');
-          throw new Error('API key invalid or quota exceeded. Please enter your own key.');
+          logMessage('API key invalid or quota exceeded.', 'error');
+          throw new Error('API key invalid or quota exceeded.');
         }
         throw new Error(err.error?.message || 'Gemini API error');
       }
@@ -541,28 +626,24 @@
       let cleaned = text.trim();
       if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
       else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+      logMessage('Verification quiz generated successfully.', 'success');
       return JSON.parse(cleaned);
     }
 
-    // ------------------------------------------------------------------
-    // 4. Render Verification Quiz
-    // ------------------------------------------------------------------
+    // ─── Render Verification Quiz ───
     function renderVerificationQuiz(questions) {
       quizContainer.innerHTML = '';
-      verificationScore = 0;
-      answeredCount = 0;
-      quizLocked = false;
-      updateProgress();
-
+      verificationScore = 0; answeredCount = 0; quizLocked = false;
+      progressFill.style.width = '0%';
       questions.forEach((q, idx) => {
         const card = document.createElement('div');
-        card.className = 'quiz-card bg-slate-800/80 border border-slate-700 p-4 rounded-xl space-y-2';
+        card.className = 'quiz-card glass rounded-xl p-4 space-y-2 animate-fade-up';
         card.id = `vq-${idx}`;
         let optsHtml = '';
         q.options.forEach(opt => {
           optsHtml += `
-            <label class="flex items-start space-x-3 p-2 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 cursor-pointer transition-colors" id="lbl-${idx}-${opt.replace(/\s/g,'')}">
-              <input type="radio" name="vq-${idx}" value="${opt}" class="mt-1 text-indigo-500 focus:ring-indigo-500" data-q="${idx}" data-opt="${opt}">
+            <label class="radio-label flex items-start space-x-3 p-2.5 rounded-lg border border-slate-700 bg-slate-900/50 transition-all duration-200" id="lbl-${idx}-${opt.replace(/\s/g,'')}">
+              <input type="radio" name="vq-${idx}" value="${opt}" class="mt-1 pointer-events-none" data-q="${idx}" data-opt="${opt}">
               <span class="text-sm text-slate-200">${opt}</span>
             </label>
           `;
@@ -575,30 +656,26 @@
         quizContainer.appendChild(card);
       });
 
-      document.querySelectorAll('#quiz-container input[type="radio"]').forEach(radio => {
-        radio.addEventListener('change', handleVerificationAnswer);
+      quizContainer.querySelectorAll('.radio-label').forEach(label => {
+        label.addEventListener('click', function(e) {
+          const radio = this.querySelector('input[type="radio"]');
+          if (!radio) return;
+          radio.checked = true;
+          handleVerificationAnswer(radio);
+        });
       });
     }
 
-    // ------------------------------------------------------------------
-    // 5. Handle Instant Verification Answer
-    // ------------------------------------------------------------------
-    function handleVerificationAnswer(e) {
-      const radio = e.target;
+    // ─── Handle Verification Answer ───
+    window.handleVerificationAnswer = function(radio) {
       const qIndex = parseInt(radio.dataset.q);
       const selected = radio.value;
       const question = verificationQuestions[qIndex];
       const card = document.getElementById(`vq-${qIndex}`);
       const feedback = document.getElementById(`vq-feedback-${qIndex}`);
-
-      if (card.dataset.answered === 'true' || quizLocked) {
-        radio.checked = false;
-        return;
-      }
-
+      if (card.dataset.answered === 'true' || quizLocked) { radio.checked = false; return; }
       const radios = card.querySelectorAll('input[type="radio"]');
       radios.forEach(r => r.disabled = true);
-
       const isCorrect = (selected === question.answer);
       const label = card.querySelector(`#lbl-${qIndex}-${selected.replace(/\s/g,'')}`);
       if (label) {
@@ -611,99 +688,86 @@
           label.classList.add('wrong-answer');
           const correctLabel = card.querySelector(`#lbl-${qIndex}-${question.answer.replace(/\s/g,'')}`);
           if (correctLabel) correctLabel.classList.add('correct-answer');
-          feedback.textContent = `❌ Incorrect. The correct answer is: ${question.answer}`;
+          feedback.textContent = `❌ Incorrect. Answer: ${question.answer}`;
           feedback.className = 'text-xs mt-2 text-red-400';
         }
       }
       feedback.classList.remove('hidden');
       card.dataset.answered = 'true';
       answeredCount++;
-      updateProgress();
-
-      if (verificationScore >= 5 && !quizLocked) {
-        quizLocked = true;
-        verificationResult.textContent = '🎉 You passed! Unlocking full features...';
-        verificationResult.className = 'text-emerald-400 text-sm font-semibold text-center';
-        document.querySelectorAll('#quiz-container input[type="radio"]:not(:disabled)').forEach(r => r.disabled = true);
-        localStorage.setItem('pungystudio_verified', 'true');
-        setTimeout(() => {
-          verificationOverlay.classList.add('hidden');
-          mainWorkspace.classList.remove('hidden');
-          statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
-          statusText.textContent = 'Verified';
-        }, 800);
-      } else {
-        const remaining = 5 - verificationScore;
-        if (remaining > 0) {
-          verificationResult.textContent = `You have ${verificationScore} correct. Need ${remaining} more.`;
-          verificationResult.className = 'text-slate-300 text-sm font-semibold text-center';
+      progressFill.style.width = (answeredCount / verificationQuestions.length * 100) + '%';
+      if (answeredCount === verificationQuestions.length) {
+        if (verificationScore >= 5) {
+          quizLocked = true;
+          verificationResult.textContent = '🎉 You passed! Unlocking...';
+          verificationResult.className = 'text-emerald-400 text-sm font-semibold text-center';
+          localStorage.setItem('pungystudio_verified', 'true');
+          logMessage('Verification passed!', 'success');
+          setTimeout(() => {
+            verificationOverlay.classList.add('hidden');
+            mainWorkspace.classList.remove('hidden');
+            setStatus(true, 'Verified');
+            alreadyVerified = true;
+          }, 600);
+        } else {
+          verificationResult.textContent = `❌ You got ${verificationScore} correct. Need 5. Retry.`;
+          verificationResult.className = 'text-red-400 text-sm font-semibold text-center';
+          retryVerificationBtn.classList.remove('hidden');
+          logMessage('Verification failed: ' + verificationScore + ' correct', 'error');
         }
+      } else {
+        verificationResult.textContent = `Answered ${answeredCount}/${verificationQuestions.length}. Score: ${verificationScore}`;
+        verificationResult.className = 'text-slate-300 text-sm font-semibold text-center';
       }
-    }
+    };
 
-    // ------------------------------------------------------------------
-    // 6. Update Progress Bar
-    // ------------------------------------------------------------------
-    function updateProgress() {
-      const total = verificationQuestions.length || 10;
-      const percent = Math.min((answeredCount / total) * 100, 100);
-      progressFill.style.width = percent + '%';
-    }
-
-    // ------------------------------------------------------------------
-    // 7. Retry Verification
-    // ------------------------------------------------------------------
+    // ─── Retry Verification ───
     async function refreshVerificationQuiz() {
       verificationResult.textContent = 'Generating new quiz...';
-      verificationResult.className = 'text-slate-300 text-sm font-semibold text-center';
       retryVerificationBtn.classList.add('hidden');
-      statusDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
-      statusText.textContent = 'Generating...';
+      setStatus(false, 'Generating...');
       try {
         const questions = await generateVerificationQuiz(geminiApiKey);
         verificationQuestions = questions;
         renderVerificationQuiz(questions);
-        verificationResult.textContent = `New quiz ready (${questions.length} questions). Need 5 correct to pass.`;
+        verificationResult.textContent = `New quiz ready (${questions.length} questions). Answer all.`;
         verificationResult.className = 'text-slate-300 text-sm font-semibold text-center';
-        statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
-        statusText.textContent = 'Quiz ready';
+        setStatus(true, 'Quiz ready');
       } catch (err) {
-        verificationResult.textContent = 'Error generating quiz: ' + err.message;
+        verificationResult.textContent = 'Error: ' + err.message;
         verificationResult.className = 'text-red-400 text-sm font-semibold text-center';
-        statusDot.className = 'w-2 h-2 rounded-full bg-red-500';
-        statusText.textContent = 'Error';
+        setStatus(false, 'Error');
+        logMessage('Quiz generation error: ' + err.message, 'error');
       }
     }
 
-    // ------------------------------------------------------------------
-    // 8. Main init: show verification status first, load API in bg
-    // ------------------------------------------------------------------
+    // ─── Init ───
     function initApp() {
       checkVerificationStatus();
-
-      (async function loadApiAndQuiz() {
-        try {
-          statusText.textContent = 'Loading API...';
-          geminiApiKey = await fetchGeminiKey();
-          statusText.textContent = 'Generating quiz...';
-          const questions = await generateVerificationQuiz(geminiApiKey);
-          verificationQuestions = questions;
-          renderVerificationQuiz(questions);
-          statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
-          statusText.textContent = alreadyVerified ? 'Verified' : 'Quiz ready';
-        } catch (err) {
-          statusDot.className = 'w-2 h-2 rounded-full bg-red-500';
-          statusText.textContent = 'API error';
-          console.error(err);
-          // Show error on landing
-          const errMsg = document.createElement('p');
-          errMsg.className = 'text-red-400 text-sm mt-4';
-          errMsg.textContent = '⚠️ ' + err.message;
-          document.querySelector('#landing-page .text-slate-300')?.after(errMsg);
-          // The fallback UI is already shown by fetchGeminiKey or generateVerificationQuiz
-        }
-      })();
-
+      if (alreadyVerified) {
+        setStatus(true, 'Verified (cached)');
+        (async function loadApiOnly() { try { geminiApiKey = await fetchGeminiKey(); } catch(e) { setStatus(false,'API error'); } })();
+      } else {
+        (async function loadApiAndQuiz() {
+          try {
+            setStatus(false, 'Loading API...');
+            geminiApiKey = await fetchGeminiKey();
+            setStatus(false, 'Generating quiz...');
+            const questions = await generateVerificationQuiz(geminiApiKey);
+            verificationQuestions = questions;
+            renderVerificationQuiz(questions);
+            setStatus(true, 'Quiz ready');
+          } catch (err) {
+            setStatus(false, 'API error');
+            logMessage('Init error: ' + err.message, 'error');
+            console.error(err);
+            const errMsg = document.createElement('p');
+            errMsg.className = 'text-red-400 text-sm mt-4';
+            errMsg.textContent = '⚠️ ' + err.message;
+            document.querySelector('#landing-page .text-slate-300')?.after(errMsg);
+          }
+        })();
+      }
       getStartedBtn.onclick = function() {
         if (alreadyVerified) {
           landingPage.classList.add('hidden');
@@ -711,49 +775,33 @@
           mainWorkspace.classList.remove('hidden');
         } else {
           if (!geminiApiKey) {
-            verificationResult.textContent = 'Please wait, API is still loading...';
+            verificationResult.textContent = 'Please wait, API loading...';
             verificationResult.className = 'text-amber-400 text-sm font-semibold text-center';
             return;
           }
           landingPage.classList.add('hidden');
           verificationOverlay.classList.remove('hidden');
-          statusText.textContent = 'Quiz time!';
+          setStatus(false, 'Quiz time!');
           renderVerificationQuiz(verificationQuestions);
           verificationResult.textContent = '';
           retryVerificationBtn.classList.add('hidden');
         }
       };
-
       retryVerificationBtn.addEventListener('click', refreshVerificationQuiz);
     }
 
-    // ------------------------------------------------------------------
-    // 9. Document handling – FIXED PDF handling
-    // ------------------------------------------------------------------
-    function showError(msg) {
-      errorBox.textContent = msg;
-      errorBox.classList.remove('hidden');
-    }
-    function hideError() {
-      errorBox.classList.add('hidden');
-    }
+    // ─── Document Handling ───
+    function showError(msg) { errorBox.textContent = msg; errorBox.classList.remove('hidden'); logMessage('Error: ' + msg, 'error'); }
+    function hideError() { errorBox.classList.add('hidden'); }
     function resetWorkspace() {
-      workspaceSection.classList.add('hidden');
-      uploadSection.classList.remove('hidden');
-      fileInput.value = '';
-      rawFileText = '';
-      originalViewerHtml = '';
-      quizData = [];
-      userAnswers = {};
-      summaryIntro.classList.remove('hidden');
-      summaryActiveArea.classList.add('hidden');
-      examIntro.classList.remove('hidden');
-      examSettings.classList.add('hidden');
-      examActiveArea.classList.add('hidden');
-      resultsArea.classList.add('hidden');
-      hideError();
-      clearInterval(examTimer);
-      timerDisplay.classList.add('hidden');
+      workspaceSection.classList.add('hidden'); uploadSection.classList.remove('hidden');
+      fileInput.value = ''; rawFileText = ''; originalViewerHtml = ''; userAnswers = {};
+      summaryIntro.classList.remove('hidden'); summaryActiveArea.classList.add('hidden');
+      examIntro.classList.remove('hidden'); examSettings.classList.add('hidden');
+      examActiveArea.classList.add('hidden'); resultsArea.classList.add('hidden');
+      keyconceptsIntro.classList.remove('hidden'); keyconceptsActive.classList.add('hidden');
+      hideError(); clearInterval(examTimer); timerDisplay.classList.add('hidden');
+      uploadedFileData = null; pdfProcessedContent = null;
     }
     function showWorkspace() {
       uploadSection.classList.add('hidden');
@@ -762,41 +810,82 @@
     }
     function formatBytes(bytes) {
       if (bytes === 0) return '0 Bytes';
-      const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB'];
+      const k = 1024, sizes = ['Bytes','KB','MB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
     function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+      return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
     }
 
     function switchTab(activeTab) {
-      [tabViewer, tabSummary, tabExam].forEach(t => t.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all');
-      [viewerPane, summaryPane, examPane].forEach(p => p.classList.add('hidden'));
+      [tabViewer, tabSummary, tabExam, tabKeyConcepts].forEach(t => t.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200');
+      [viewerPane, summaryPane, examPane, keyconceptsPane].forEach(p => p.classList.add('hidden'));
       if (activeTab === 'viewer') {
-        tabViewer.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all';
+        tabViewer.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
         viewerPane.classList.remove('hidden');
       } else if (activeTab === 'summary') {
-        tabSummary.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all';
+        tabSummary.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
         summaryPane.classList.remove('hidden');
       } else if (activeTab === 'exam') {
-        tabSummary.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all';
+        tabExam.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
         examPane.classList.remove('hidden');
-        examIntro.classList.remove('hidden');
-        examSettings.classList.add('hidden');
-        examActiveArea.classList.add('hidden');
-        resultsArea.classList.add('hidden');
-        clearInterval(examTimer);
-        timerDisplay.classList.add('hidden');
+        examIntro.classList.remove('hidden'); examSettings.classList.add('hidden');
+        examActiveArea.classList.add('hidden'); resultsArea.classList.add('hidden');
+        clearInterval(examTimer); timerDisplay.classList.add('hidden');
+      } else if (activeTab === 'keyconcepts') {
+        tabKeyConcepts.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
+        keyconceptsPane.classList.remove('hidden');
+        keyconceptsIntro.classList.remove('hidden');
+        keyconceptsActive.classList.add('hidden');
       }
     }
-
     tabViewer.addEventListener('click', () => switchTab('viewer'));
     tabSummary.addEventListener('click', () => switchTab('summary'));
     tabExam.addEventListener('click', () => switchTab('exam'));
+    tabKeyConcepts.addEventListener('click', () => switchTab('keyconcepts'));
 
-    // FIX: Proper PDF handling – first check MIME type, then extension
+    // ─── AI Functions with file support ───
+    async function callGemini(prompt, fileData = null) {
+      if (!geminiApiKey) throw new Error('API key not available.');
+      let parts = [{ text: prompt }];
+      if (fileData) {
+        parts.push({
+          inlineData: {
+            mimeType: fileData.mimeType,
+            data: fileData.base64
+          }
+        });
+      }
+      try {
+        logMessage('Sending request to Gemini API...', 'info');
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts }] })
+        });
+        if (!response.ok) {
+          const err = await response.json();
+          if ([429, 403, 400].includes(response.status)) {
+            apiFallback.classList.remove('hidden');
+            logMessage('API key error: ' + (err.error?.message || 'quota exceeded'), 'error');
+            throw new Error('API key invalid or quota exceeded.');
+          }
+          throw new Error(err.error?.message || 'API call failed');
+        }
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error('No content returned.');
+        logMessage('AI response received successfully.', 'success');
+        return text;
+      } catch (err) {
+        apiFallback.classList.remove('hidden');
+        logMessage('AI call error: ' + err.message, 'error');
+        throw err;
+      }
+    }
+
+    // ─── Handle File Upload ───
     function handleFile(file) {
       hideError();
       if (!file) return;
@@ -805,23 +894,87 @@
       metaType.textContent = file.type || 'Binary / Unknown';
       const extension = file.name.split('.').pop().toLowerCase();
 
-      // PDF – check MIME type first, then extension
+      // PDF – auto AI‑ify with animation
       if (file.type === 'application/pdf' || extension === 'pdf') {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
           const dataUrl = e.target.result;
-          // Set rawFileText to a placeholder (PDFs cannot be parsed for text)
-          rawFileText = `[PDF Document: ${file.name}]`;
-          // Display PDF using iframe
-          originalViewerHtml = `<iframe src="${dataUrl}" class="w-full h-[600px] border-0 rounded-lg"></iframe>`;
-          viewerContent.innerHTML = originalViewerHtml;
+          const base64 = dataUrl.split(',')[1];
+          uploadedFileData = { base64, mimeType: 'application/pdf', name: file.name };
+
           showWorkspace();
+          viewerContent.innerHTML = `
+            <div class="loading-overlay">
+              <div class="siri-wave glow">
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+              </div>
+              <div class="loading-text">AI is reading your PDF...</div>
+            </div>
+          `;
+          logMessage('Processing PDF with Gemini...', 'info');
+
+          try {
+            const prompt = `You are an expert document analyzer. Extract and restructure the content of this PDF into a clean, well‑formatted HTML document with clear topics, sub‑topics, and semantic tags (use Tailwind CSS classes). 
+            Return the content as clean HTML. Do not include markdown or code fences – just the HTML.`;
+            const result = await callGemini(prompt, uploadedFileData);
+            let cleaned = result.trim();
+            if (cleaned.startsWith('```html')) cleaned = cleaned.replace(/^```html/,'').replace(/```$/,'').trim();
+            else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/,'').replace(/```$/,'').trim();
+            
+            pdfProcessedContent = cleaned;
+            rawFileText = cleaned;
+
+            originalViewerHtml = `
+              <div class="mb-4 flex items-center justify-between text-xs text-indigo-400 font-medium bg-indigo-950/40 border border-indigo-900 p-2 rounded-lg animate-fade-up">
+                <span>✨ PDF content extracted and structured by Pungystudio AI</span>
+                <button id="show-original-pdf" class="underline text-slate-300 hover:text-white transition-colors">Show Original PDF</button>
+              </div>
+              <div class="space-y-4">${cleaned}</div>
+            `;
+            viewerContent.innerHTML = originalViewerHtml;
+            logMessage('PDF successfully processed.', 'success');
+
+            document.getElementById('show-original-pdf')?.addEventListener('click', () => {
+              viewerContent.innerHTML = `
+                <div class="mb-4 flex items-center justify-between text-xs text-slate-400 font-medium bg-slate-800/50 border border-slate-700 p-2 rounded-lg">
+                  <span>📄 Original PDF</span>
+                  <button id="show-ai-content" class="underline text-indigo-400 hover:text-indigo-300 transition-colors">Show AI‑ified Content</button>
+                </div>
+                <embed src="${dataUrl}" type="application/pdf" class="pdf-viewer" />
+              `;
+              document.getElementById('show-ai-content')?.addEventListener('click', () => {
+                viewerContent.innerHTML = originalViewerHtml;
+                document.getElementById('show-original-pdf')?.addEventListener('click', () => {
+                  viewerContent.innerHTML = `
+                    <div class="mb-4 flex items-center justify-between text-xs text-slate-400 font-medium bg-slate-800/50 border border-slate-700 p-2 rounded-lg">
+                      <span>📄 Original PDF</span>
+                      <button id="show-ai-content" class="underline text-indigo-400 hover:text-indigo-300 transition-colors">Show AI‑ified Content</button>
+                    </div>
+                    <embed src="${dataUrl}" type="application/pdf" class="pdf-viewer" />
+                  `;
+                  document.getElementById('show-ai-content')?.addEventListener('click', () => {
+                    viewerContent.innerHTML = originalViewerHtml;
+                  });
+                });
+              });
+            });
+          } catch (err) {
+            showError('Failed to process PDF: ' + err.message);
+            viewerContent.innerHTML = `
+              <div class="mb-4 flex items-center justify-between text-xs text-red-400 font-medium bg-red-950/40 border border-red-900 p-2 rounded-lg">
+                <span>⚠️ Could not extract content, showing original PDF</span>
+              </div>
+              <embed src="${dataUrl}" type="application/pdf" class="pdf-viewer" />
+            `;
+          }
         };
         reader.readAsDataURL(file);
         return;
       }
 
-      // Word (.docx)
+      // ─── DOCX ───
       if (extension === 'docx') {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -833,14 +986,15 @@
               temp.innerHTML = result.value;
               rawFileText = temp.textContent || temp.innerText || '';
               showWorkspace();
+              logMessage('DOCX loaded successfully.', 'success');
             })
-            .catch(err => showError('Error parsing Word document: ' + err.message));
+            .catch(err => showError('Error parsing Word: ' + err.message));
         };
         reader.readAsArrayBuffer(file);
         return;
       }
 
-      // Text files (txt, md, json, code, etc.)
+      // ─── Text files ───
       if (['txt','md','json','js','html','css','csv','log','xml','yaml','yml'].includes(extension) || file.type.startsWith('text/')) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -848,17 +1002,18 @@
           originalViewerHtml = `<pre class="font-mono text-xs text-slate-200 whitespace-pre-wrap">${escapeHtml(rawFileText)}</pre>`;
           viewerContent.innerHTML = originalViewerHtml;
           showWorkspace();
+          logMessage('Text file loaded.', 'success');
         };
         reader.readAsText(file);
         return;
       }
 
-      // Images
+      // ─── Images ───
       if (['jpg','jpeg','png','gif','webp','svg'].includes(extension) || file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = function(e) {
-          rawFileText = `[Uploaded Image: ${file.name}]`;
-          originalViewerHtml = `<div class="flex justify-center"><img src="${e.target.result}" class="max-h-[500px] object-contain rounded-lg"></div>`;
+          rawFileText = '';
+          originalViewerHtml = `<div class="flex justify-center"><img src="${e.target.result}" class="max-h-[500px] object-contain rounded-xl"></div>`;
           viewerContent.innerHTML = originalViewerHtml;
           showWorkspace();
         };
@@ -866,16 +1021,16 @@
         return;
       }
 
-      showError('Unsupported file format. Please upload a PDF, Word document, text file, or image.');
+      showError('Unsupported file format.');
     }
 
     dropZone.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
     ['dragenter','dragover'].forEach(ev => {
-      dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-500','bg-slate-800'); });
+      dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
     });
     ['dragleave','drop'].forEach(ev => {
-      dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.remove('border-indigo-500','bg-slate-800'); });
+      dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
     });
     dropZone.addEventListener('drop', (e) => {
       const file = e.dataTransfer.files[0];
@@ -883,88 +1038,81 @@
     });
     changeFileBtn.addEventListener('click', resetWorkspace);
 
-    // ------------------------------------------------------------------
-    // 10. AI Functions using Gemini 3.6 Flash (with fallback handling)
-    // ------------------------------------------------------------------
-    async function callGemini(prompt) {
-      if (!geminiApiKey) {
-        throw new Error('API key not available. Please enter your own key.');
-      }
-      try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-        if (!response.ok) {
-          const err = await response.json();
-          if (response.status === 429 || response.status === 403 || response.status === 400) {
-            apiFallback.classList.remove('hidden');
-            throw new Error('API key invalid or quota exceeded. Please enter your own key.');
-          }
-          throw new Error(err.error?.message || 'API call failed');
-        }
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!text) throw new Error('No content returned.');
-        return text;
-      } catch (err) {
-        // Show fallback if not already shown
-        apiFallback.classList.remove('hidden');
-        throw err;
-      }
-    }
-
+    // ─── AI-ify ───
     aiIfyBtn.addEventListener('click', async () => {
       hideError();
-      if (!isVerified) { showError('You must complete human verification first.'); return; }
-      if (!rawFileText) { showError('Please upload a document first.'); return; }
+      if (!isVerified) { showError('Complete verification first.'); return; }
+      if (!rawFileText && !uploadedFileData) {
+        showError('No document content found. Please upload a supported file.');
+        return;
+      }
       aiSpinner.classList.remove('hidden');
       aiBtnText.textContent = 'AI-ifying...';
       aiIfyBtn.disabled = true;
+      logMessage('AI-ifying document...', 'info');
       try {
-        const prompt = `You are an expert document organizer. Analyze the following text and restructure it with clear topics, sub-topics, and semantic inline tags (use Tailwind classes). Return as clean HTML. Document:\n${rawFileText.substring(0,20000)}`;
-        const result = await callGemini(prompt);
+        let prompt = `You are an expert document organizer. Analyze the following document and restructure it with clear topics, sub-topics, and semantic inline tags (use Tailwind classes). Return as clean HTML.`;
+        let fileData = null;
+        if (uploadedFileData && !rawFileText) {
+          fileData = uploadedFileData;
+          prompt += ` The document is a PDF. Please analyze its content.`;
+        } else {
+          prompt += `\nDocument text:\n${rawFileText.substring(0,20000)}`;
+        }
+        const result = await callGemini(prompt, fileData);
         let cleaned = result.trim();
         if (cleaned.startsWith('```html')) cleaned = cleaned.replace(/^```html/,'').replace(/```$/,'').trim();
         else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/,'').replace(/```$/,'').trim();
         viewerContent.innerHTML = `
-          <div class="mb-4 flex items-center justify-between text-xs text-indigo-400 font-medium bg-indigo-950/40 border border-indigo-900 p-2 rounded-lg">
-            <span>✨ Document successfully AI-ified!</span>
-            <button id="revert-view-btn" class="underline text-slate-300 hover:text-white">Show Original</button>
+          <div class="mb-4 flex items-center justify-between text-xs text-indigo-400 font-medium bg-indigo-950/40 border border-indigo-900 p-2 rounded-lg animate-fade-up">
+            <span>✨ Document successfully AI-ified by Pungystudio AI</span>
+            <button id="revert-view-btn" class="underline text-slate-300 hover:text-white transition-colors">Show Original</button>
           </div>
           <div class="space-y-4">${cleaned}</div>
         `;
         document.getElementById('revert-view-btn').addEventListener('click', () => {
           viewerContent.innerHTML = originalViewerHtml;
         });
+        logMessage('AI-ify complete.', 'success');
       } catch (err) {
         showError('AI-ify Error: ' + err.message);
+        logMessage('AI-ify error: ' + err.message, 'error');
       } finally {
         aiSpinner.classList.add('hidden');
-        aiBtnText.textContent = 'AI-ify 😂';
+        aiBtnText.textContent = 'AI-ify ✨';
         aiIfyBtn.disabled = false;
       }
     });
 
+    // ─── Summary ───
     async function runSummaryGeneration() {
       hideError();
       if (!isVerified) { showError('Verification required.'); return; }
-      if (!rawFileText) { showError('Upload a document first.'); return; }
+      if (!rawFileText && !uploadedFileData) { showError('Upload a document first.'); return; }
       summarySpinner.classList.remove('hidden');
       summaryBtnText.textContent = 'Generating...';
       generateSummaryBtn.disabled = true;
+      logMessage('Generating summary...', 'info');
       try {
-        const prompt = `Provide a comprehensive executive summary of this text with: 1. Overview, 2. Key takeaways (bullets), 3. Topic breakdown, 4. Conclusion. Use Tailwind HTML classes.\n${rawFileText.substring(0,25000)}`;
-        const result = await callGemini(prompt);
+        let prompt = `Provide a comprehensive executive summary of the following document with: 1. Overview, 2. Key takeaways (bullets), 3. Topic breakdown, 4. Conclusion. Use Tailwind HTML classes.`;
+        let fileData = null;
+        if (uploadedFileData && !rawFileText) {
+          fileData = uploadedFileData;
+          prompt += ` The document is a PDF.`;
+        } else {
+          prompt += `\nDocument text:\n${rawFileText.substring(0,25000)}`;
+        }
+        const result = await callGemini(prompt, fileData);
         let cleaned = result.trim();
         if (cleaned.startsWith('```html')) cleaned = cleaned.replace(/^```html/,'').replace(/```$/,'').trim();
         else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/,'').replace(/```$/,'').trim();
         summaryContent.innerHTML = cleaned;
         summaryIntro.classList.add('hidden');
         summaryActiveArea.classList.remove('hidden');
+        logMessage('Summary generated.', 'success');
       } catch (err) {
         showError('Summary error: ' + err.message);
+        logMessage('Summary error: ' + err.message, 'error');
       } finally {
         summarySpinner.classList.add('hidden');
         summaryBtnText.textContent = 'Generate AI Summary';
@@ -974,53 +1122,105 @@
     generateSummaryBtn.addEventListener('click', runSummaryGeneration);
     regenSummaryBtn.addEventListener('click', runSummaryGeneration);
 
-    // ------------------------------------------------------------------
-    // 11. Exam Generator with Mode & Timer (fix click issue)
-    // ------------------------------------------------------------------
+    // ─── Key Concepts ───
+    async function runKeyConceptsGeneration() {
+      hideError();
+      if (!isVerified) { showError('Verification required.'); return; }
+      if (!rawFileText && !uploadedFileData) { showError('Upload a document first.'); return; }
+      keyconceptsSpinner.classList.remove('hidden');
+      keyconceptsBtnText.textContent = 'Extracting...';
+      generateKeyConceptsBtn.disabled = true;
+      logMessage('Extracting key concepts...', 'info');
+      try {
+        let prompt = `Extract the most important key concepts, terms, and definitions from the following document. Return as a clean HTML list with each concept and its definition. Use Tailwind CSS classes.`;
+        let fileData = null;
+        if (uploadedFileData && !rawFileText) {
+          fileData = uploadedFileData;
+          prompt += ` The document is a PDF.`;
+        } else {
+          prompt += `\nDocument text:\n${rawFileText.substring(0,25000)}`;
+        }
+        const result = await callGemini(prompt, fileData);
+        let cleaned = result.trim();
+        if (cleaned.startsWith('```html')) cleaned = cleaned.replace(/^```html/,'').replace(/```$/,'').trim();
+        else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/,'').replace(/```$/,'').trim();
+        keyconceptsContent.innerHTML = cleaned;
+        keyconceptsIntro.classList.add('hidden');
+        keyconceptsActive.classList.remove('hidden');
+        logMessage('Key concepts extracted.', 'success');
+      } catch (err) {
+        showError('Key concepts error: ' + err.message);
+        logMessage('Key concepts error: ' + err.message, 'error');
+      } finally {
+        keyconceptsSpinner.classList.add('hidden');
+        keyconceptsBtnText.textContent = 'Extract Key Concepts';
+        generateKeyConceptsBtn.disabled = false;
+      }
+    }
+    generateKeyConceptsBtn.addEventListener('click', runKeyConceptsGeneration);
+    regenKeyConceptsBtn.addEventListener('click', runKeyConceptsGeneration);
+
+    // ─── Exam Generator ───
     generateExamBtn.addEventListener('click', async () => {
       hideError();
       if (!isVerified) { showError('Verification required.'); return; }
-      if (!rawFileText) { showError('Upload a document first.'); return; }
+      if (!rawFileText && !uploadedFileData) { showError('Upload a document first.'); return; }
       examSpinner.classList.remove('hidden');
       examBtnText.textContent = 'Generating...';
       generateExamBtn.disabled = true;
+      logMessage('Generating exam questions...', 'info');
       try {
-        const prompt = `Create a comprehensive multiple-choice quiz (10-25 questions) based on the following text. Return as JSON array of objects with keys: question, options (array of 4), answer, explanation.\n${rawFileText.substring(0,25000)}`;
-        const result = await callGemini(prompt);
+        let prompt = `Create a comprehensive multiple-choice quiz (10-25 questions) based on the following document. Return as JSON array of objects with keys: question, options (array of 4), answer, explanation.`;
+        let fileData = null;
+        if (uploadedFileData && !rawFileText) {
+          fileData = uploadedFileData;
+          prompt += ` The document is a PDF.`;
+        } else {
+          prompt += `\nDocument text:\n${rawFileText.substring(0,25000)}`;
+        }
+        const result = await callGemini(prompt, fileData);
         let cleaned = result.trim();
         if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/,'').replace(/```$/,'').trim();
         else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/,'').replace(/```$/,'').trim();
         examQuestions = JSON.parse(cleaned);
-        // Show settings
         examIntro.classList.add('hidden');
         examSettings.classList.remove('hidden');
         examActiveArea.classList.add('hidden');
         resultsArea.classList.add('hidden');
         timerDisplay.classList.add('hidden');
         clearInterval(examTimer);
-        // Pre-select default mode (instant)
         document.querySelector('input[name="exam-mode"][value="instant"]').checked = true;
         timerSelect.value = '10';
+        logMessage(`Exam generated with ${examQuestions.length} questions.`, 'success');
       } catch (err) {
         showError('Exam generation error: ' + err.message);
+        logMessage('Exam error: ' + err.message, 'error');
       } finally {
         examSpinner.classList.add('hidden');
-        examBtnText.textContent = 'Generate Full Assessment Exam';
+        examBtnText.textContent = 'Generate Exam';
         generateExamBtn.disabled = false;
       }
     });
 
-    // Start Exam
+    // ─── Start Exam ───
     startExamBtn.addEventListener('click', () => {
       const modeRadio = document.querySelector('input[name="exam-mode"]:checked');
       examMode = modeRadio ? modeRadio.value : 'instant';
       examTimeLimit = parseInt(timerSelect.value) || 0;
-      // Render questions
-      renderExamQuestions(examMode);
+      userAnswers = {};
+      examSubmitted = false;
+      clearInterval(examTimer);
+      timerDisplay.classList.add('hidden');
       examSettings.classList.add('hidden');
       examActiveArea.classList.remove('hidden');
       resultsArea.classList.add('hidden');
-      // Start timer
+
+      if (examMode === 'instant') {
+        renderInstantModeDiv();
+      } else {
+        renderAfterModeRadios();
+      }
+
       if (examTimeLimit > 0) {
         examTimeLeft = examTimeLimit * 60;
         timerDisplay.classList.remove('hidden');
@@ -1040,114 +1240,131 @@
       } else {
         timerDisplay.classList.add('hidden');
       }
-      examSubmitted = false;
+      logMessage(`Exam started. Mode: ${examMode}${examTimeLimit > 0 ? ', Timer: ' + examTimeLimit + ' min' : ''}`, 'info');
     });
 
     function updateTimerDisplay() {
       const mins = Math.floor(examTimeLeft / 60);
       const secs = examTimeLeft % 60;
       timerCount.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-      if (examTimeLeft < 60) {
-        timerCount.style.color = '#ef4444';
-      } else {
-        timerCount.style.color = '';
-      }
+      if (examTimeLeft < 60) timerCount.style.color = '#ef4444';
+      else timerCount.style.color = '';
     }
 
-    // Render exam questions with given mode – FIX: ensure radios are clickable
-    function renderExamQuestions(mode) {
+    // ─── Instant Mode ───
+    function renderInstantModeDiv() {
       questionsContainer.innerHTML = '';
-      userAnswers = {};
       totalQuestionsBadge.textContent = `${examQuestions.length} Questions`;
+      const letters = ['A', 'B', 'C', 'D'];
       examQuestions.forEach((q, qIndex) => {
         const card = document.createElement('div');
-        card.className = 'bg-slate-800/80 border border-slate-700 p-5 rounded-xl space-y-3';
+        card.className = 'exam-card glass rounded-xl p-5 space-y-3 animate-fade-up';
         card.id = `exam-q-${qIndex}`;
+        card.dataset.answered = 'false';
+
         let optsHtml = '';
-        q.options.forEach(opt => {
+        q.options.forEach((opt, optIndex) => {
+          const letter = letters[optIndex] || '';
           optsHtml += `
-            <label class="flex items-start space-x-3 p-3 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 cursor-pointer transition-colors" id="exam-lbl-${qIndex}-${opt.replace(/\s/g,'')}">
-              <input type="radio" name="exam-q-${qIndex}" value="${opt}" class="mt-1 text-indigo-500 focus:ring-indigo-500" data-q="${qIndex}" data-opt="${opt}" style="cursor:pointer;">
-              <span class="text-sm text-slate-200">${opt}</span>
-            </label>
+            <div class="option-btn" data-q="${qIndex}" data-opt="${opt}" onclick="selectInstantOption(this, ${qIndex})">
+              <span class="option-letter">${letter}.</span> ${opt}
+            </div>
           `;
         });
-        let feedbackHtml = '';
-        if (mode === 'instant') {
-          feedbackHtml = `<div id="exam-feedback-${qIndex}" class="text-xs mt-2 hidden"></div>`;
-        }
+
         card.innerHTML = `
           <p class="font-semibold text-white text-base">Q${qIndex+1}. ${q.question}</p>
           <div class="space-y-2 mt-2">${optsHtml}</div>
-          ${feedbackHtml}
+          <div id="exam-feedback-${qIndex}" class="text-xs mt-2 hidden"></div>
           <div id="exam-expl-${qIndex}" class="hidden text-xs mt-3 p-3 rounded-lg bg-indigo-950/60 border border-indigo-800 text-indigo-200">
             <span class="font-semibold">Explanation:</span> ${q.explanation}
           </div>
         `;
         questionsContainer.appendChild(card);
       });
-
-      // Attach event listeners based on mode
-      if (mode === 'instant') {
-        document.querySelectorAll('#questions-container input[type="radio"]').forEach(radio => {
-          radio.addEventListener('change', handleExamInstantAnswer);
-        });
-      } else {
-        // 'after' mode: just store choices, no immediate feedback, and ensure radios are not disabled
-        document.querySelectorAll('#questions-container input[type="radio"]').forEach(radio => {
-          radio.disabled = false; // ensure enabled
-          radio.addEventListener('change', (e) => {
-            const qIdx = parseInt(e.target.dataset.q);
-            userAnswers[qIdx] = e.target.value;
-          });
-        });
-      }
+      submitExamBtn.classList.remove('hidden');
     }
 
-    // Instant answer handler for exam
-    function handleExamInstantAnswer(e) {
-      const radio = e.target;
-      const qIndex = parseInt(radio.dataset.q);
-      const selected = radio.value;
-      const question = examQuestions[qIndex];
+    window.selectInstantOption = function(el, qIndex) {
       const card = document.getElementById(`exam-q-${qIndex}`);
+      if (card.dataset.answered === 'true') return;
+      const selected = el.dataset.opt;
+      const question = examQuestions[qIndex];
       const feedback = document.getElementById(`exam-feedback-${qIndex}`);
-      
-      if (card.dataset.answered === 'true') {
-        radio.checked = false;
-        return;
-      }
+      const expl = document.getElementById(`exam-expl-${qIndex}`);
 
-      // Disable all radios in this group
-      const radios = card.querySelectorAll('input[type="radio"]');
-      radios.forEach(r => r.disabled = true);
+      card.dataset.answered = 'true';
+      card.querySelectorAll('.option-btn').forEach(btn => {
+        btn.classList.add('disabled');
+        btn.onclick = null;
+      });
 
       const isCorrect = (selected === question.answer);
-      const label = card.querySelector(`#exam-lbl-${qIndex}-${selected.replace(/\s/g,'')}`);
-      if (label) {
-        if (isCorrect) {
-          label.classList.add('correct-answer');
-          feedback.textContent = '✅ Correct!';
-          feedback.className = 'text-xs mt-2 text-emerald-400';
-        } else {
-          label.classList.add('wrong-answer');
-          const correctLabel = card.querySelector(`#exam-lbl-${qIndex}-${question.answer.replace(/\s/g,'')}`);
-          if (correctLabel) correctLabel.classList.add('correct-answer');
-          feedback.textContent = `❌ Incorrect. The correct answer is: ${question.answer}`;
-          feedback.className = 'text-xs mt-2 text-red-400';
-        }
+      if (isCorrect) {
+        el.classList.add('selected-correct');
+        feedback.textContent = '✅ Correct!';
+        feedback.className = 'text-xs mt-2 text-emerald-400';
+      } else {
+        el.classList.add('selected-wrong');
+        card.querySelectorAll('.option-btn').forEach(btn => {
+          if (btn.dataset.opt === question.answer) {
+            btn.classList.add('show-correct');
+          }
+        });
+        feedback.textContent = `❌ Incorrect. Answer: ${question.answer}`;
+        feedback.className = 'text-xs mt-2 text-red-400';
       }
       feedback.classList.remove('hidden');
-      card.dataset.answered = 'true';
-      // Show explanation immediately
-      const expl = document.getElementById(`exam-expl-${qIndex}`);
       if (expl) expl.classList.remove('hidden');
-
-      // Store user's choice
       userAnswers[qIndex] = selected;
+    };
+
+    // ─── After Mode ───
+    function renderAfterModeRadios() {
+      questionsContainer.innerHTML = '';
+      totalQuestionsBadge.textContent = `${examQuestions.length} Questions`;
+      examQuestions.forEach((q, qIndex) => {
+        const card = document.createElement('div');
+        card.className = 'exam-card glass rounded-xl p-5 space-y-3 animate-fade-up';
+        card.id = `exam-q-${qIndex}`;
+
+        let optsHtml = '';
+        q.options.forEach((opt) => {
+          const optId = opt.replace(/\s/g, '');
+          optsHtml += `
+            <label class="radio-label flex items-start space-x-3 p-3 rounded-lg border border-slate-700 bg-slate-900/50 transition-all duration-200 hover:bg-slate-800/50 cursor-pointer" 
+                   id="exam-lbl-${qIndex}-${optId}" 
+                   data-q="${qIndex}" data-opt="${opt}">
+              <input type="radio" name="exam-q-${qIndex}" value="${opt}" class="mt-1 pointer-events-none" data-q="${qIndex}" data-opt="${opt}">
+              <span class="text-sm text-slate-200">${opt}</span>
+            </label>
+          `;
+        });
+
+        card.innerHTML = `
+          <p class="font-semibold text-white text-base">Q${qIndex+1}. ${q.question}</p>
+          <div class="space-y-2 mt-2">${optsHtml}</div>
+          <div id="exam-expl-${qIndex}" class="hidden text-xs mt-3 p-3 rounded-lg bg-indigo-950/60 border border-indigo-800 text-indigo-200">
+            <span class="font-semibold">Explanation:</span> ${q.explanation}
+          </div>
+        `;
+
+        card.querySelectorAll('.radio-label').forEach(label => {
+          label.addEventListener('click', function(e) {
+            const radio = this.querySelector('input[type="radio"]');
+            if (!radio) return;
+            radio.checked = true;
+            const qIdx = parseInt(this.dataset.q);
+            userAnswers[qIdx] = radio.value;
+          });
+        });
+
+        questionsContainer.appendChild(card);
+      });
+      submitExamBtn.classList.remove('hidden');
     }
 
-    // Submit exam
+    // ─── Submit Exam ───
     submitExamBtn.addEventListener('click', () => {
       if (examSubmitted) return;
       examSubmitted = true;
@@ -1157,35 +1374,34 @@
     });
 
     function submitExam() {
-      // For 'after' mode, collect all answers from radio buttons
       if (examMode === 'after') {
         document.querySelectorAll('#questions-container input[type="radio"]:checked').forEach(radio => {
           const qIdx = parseInt(radio.dataset.q);
           userAnswers[qIdx] = radio.value;
         });
-        // Mark unanswered
         examQuestions.forEach((q, idx) => {
           if (!(idx in userAnswers)) userAnswers[idx] = null;
         });
       }
 
-      // Calculate score
       let score = 0;
       examQuestions.forEach((q, idx) => {
         const chosen = userAnswers[idx];
         const card = document.getElementById(`exam-q-${idx}`);
         const expl = document.getElementById(`exam-expl-${idx}`);
         if (expl) expl.classList.remove('hidden');
-        // Highlight correct/incorrect for all
-        card.querySelectorAll('input[type="radio"]').forEach(inp => {
-          inp.disabled = true;
-          const parent = inp.parentElement;
-          if (inp.value === q.answer) {
-            parent.classList.add('correct-answer');
-          } else if (inp.checked && inp.value !== q.answer) {
-            parent.classList.add('wrong-answer');
-          }
-        });
+        if (examMode === 'after') {
+          card.querySelectorAll('.radio-label').forEach(label => {
+            const radio = label.querySelector('input[type="radio"]');
+            const value = radio.value;
+            if (value === q.answer) {
+              label.classList.add('correct-answer');
+            } else if (radio.checked && value !== q.answer) {
+              label.classList.add('wrong-answer');
+            }
+            radio.disabled = true;
+          });
+        }
         if (chosen === q.answer) score++;
       });
 
@@ -1197,9 +1413,9 @@
       else scoreFeedback.textContent = 'Good effort. Review explanations to improve.';
       resultsArea.classList.remove('hidden');
       resultsArea.scrollIntoView({ behavior: 'smooth' });
+      logMessage(`Exam submitted. Score: ${score}/${examQuestions.length}`, score === examQuestions.length ? 'success' : 'info');
     }
 
-    // Retake exam
     retakeBtn.addEventListener('click', () => {
       resultsArea.classList.add('hidden');
       examActiveArea.classList.add('hidden');
@@ -1208,12 +1424,232 @@
       examSubmitted = false;
       clearInterval(examTimer);
       timerDisplay.classList.add('hidden');
+      logMessage('Exam retake started.', 'info');
     });
 
-    // ------------------------------------------------------------------
-    // 12. Start the app
-    // ------------------------------------------------------------------
+    // ─── AI Merge (Synthesize) ───
+    // Merge file handling (drop/click)
+    mergeZone.addEventListener('click', () => mergeFileInput.click());
+    mergeFileInput.addEventListener('change', (e) => handleMergeFiles(e.target.files));
+    ['dragenter','dragover'].forEach(ev => {
+      mergeZone.addEventListener(ev, (e) => { e.preventDefault(); mergeZone.classList.add('dragover'); });
+    });
+    ['dragleave','drop'].forEach(ev => {
+      mergeZone.addEventListener(ev, (e) => { e.preventDefault(); mergeZone.classList.remove('dragover'); });
+    });
+    mergeZone.addEventListener('drop', (e) => {
+      e.preventDefault(); mergeZone.classList.remove('dragover');
+      handleMergeFiles(e.dataTransfer.files);
+    });
+
+    async function handleMergeFiles(fileList) {
+      const allowed = ['txt','md','docx','pdf'];
+      const promises = [];
+      for (let file of fileList) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!allowed.includes(ext)) {
+          showError(`Skipping "${file.name}" – only .txt, .md, .docx, .pdf supported for merging.`);
+          continue;
+        }
+        const p = new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            let content = '';
+            if (ext === 'docx') {
+              try {
+                const result = await mammoth.extractRawText({ arrayBuffer: e.target.result });
+                content = result.value;
+              } catch (err) { reject(err); }
+            } else if (ext === 'pdf') {
+              // For PDFs we can't extract text easily; we'll use the PDF as inlineData in the prompt later
+              // For now we store the base64 data
+              const base64 = e.target.result.split(',')[1];
+              content = '[PDF content – will be processed by AI]';
+              // Store file data for later use
+              const fileData = { base64, mimeType: 'application/pdf', name: file.name };
+              resolve({ name: file.name, content, fileData });
+              return;
+            } else {
+              content = e.target.result;
+            }
+            resolve({ name: file.name, content, fileData: null });
+          };
+          reader.onerror = reject;
+          if (ext === 'pdf') {
+            reader.readAsDataURL(file);
+          } else if (ext === 'docx') {
+            reader.readAsArrayBuffer(file);
+          } else {
+            reader.readAsText(file);
+          }
+        });
+        promises.push(p);
+      }
+
+      try {
+        const results = await Promise.all(promises);
+        mergeFiles = mergeFiles.concat(results);
+        updateMergeFileList();
+        mergeSynthesizeBtn.disabled = false;
+        hideError();
+        logMessage(`Added ${results.length} file(s) for AI merge.`, 'success');
+        // Hide previous result
+        mergeResult.classList.add('hidden');
+      } catch (err) {
+        showError('Error reading merge files: ' + err.message);
+      }
+    }
+
+    function updateMergeFileList() {
+      mergeFileList.innerHTML = '';
+      mergeFiles.forEach((f, idx) => {
+        const div = document.createElement('div');
+        div.className = 'merge-file-item';
+        div.innerHTML = `
+          <span class="text-sm text-slate-200">${f.name}</span>
+          <button class="text-xs text-red-400 hover:text-red-300 transition-colors" data-idx="${idx}">✕</button>
+        `;
+        div.querySelector('button').addEventListener('click', () => {
+          mergeFiles.splice(idx, 1);
+          updateMergeFileList();
+          if (mergeFiles.length === 0) mergeSynthesizeBtn.disabled = true;
+          mergeResult.classList.add('hidden');
+        });
+        mergeFileList.appendChild(div);
+      });
+    }
+
+    // Synthesize button
+    mergeSynthesizeBtn.addEventListener('click', async () => {
+      if (mergeFiles.length < 2) {
+        showError('Please add at least 2 files to merge.');
+        return;
+      }
+      // Show loading with shiny siri wave
+      mergeProgress.classList.remove('hidden');
+      mergeResult.classList.add('hidden');
+      mergeProgress.innerHTML = `
+        <div class="loading-overlay">
+          <div class="siri-wave glow">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+          </div>
+          <div class="loading-text">Pungystudio AI is synthesizing your documents...</div>
+        </div>
+      `;
+      mergeSynthesizeBtn.disabled = true;
+      logMessage('Starting AI synthesis...', 'info');
+
+      try {
+        // Build prompt with all file contents
+        let combinedText = '';
+        const fileDataList = [];
+        for (let f of mergeFiles) {
+          if (f.fileData) {
+            // For PDF, we need to pass as inlineData in the API call
+            fileDataList.push(f.fileData);
+            combinedText += `\n\n--- PDF: ${f.name} ---\n[PDF content will be analyzed by AI]`;
+          } else {
+            combinedText += `\n\n--- File: ${f.name} ---\n${f.content}`;
+          }
+        }
+
+        // If we have PDFs, we'll send them as inlineData along with text prompt
+        let prompt = `You are an expert document synthesizer. You are given multiple documents. Your task is to merge them into a single, coherent, well-structured document. Remove duplicate information, group related topics together, add appropriate headings, and produce a unified narrative. The final output should be a clean HTML document suitable for study or reference. Use Tailwind CSS classes for styling.`;
+        prompt += `\n\nHere are the documents:\n${combinedText}`;
+
+        let fileData = null;
+        // If we have exactly one PDF and no other files, we can send it as fileData
+        // But here we may have multiple PDFs – we'll just send the first one? Actually Gemini can handle multiple inlineData in one request, but we'll simplify: send all PDFs as parts.
+        // We'll construct parts: first text part, then each PDF as inlineData.
+        const parts = [{ text: prompt }];
+        for (let f of mergeFiles) {
+          if (f.fileData) {
+            parts.push({
+              inlineData: {
+                mimeType: f.fileData.mimeType,
+                data: f.fileData.base64
+              }
+            });
+          }
+        }
+
+        // Call Gemini with multiple parts
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts }] })
+        });
+        if (!response.ok) {
+          const err = await response.json();
+          if ([429, 403, 400].includes(response.status)) {
+            apiFallback.classList.remove('hidden');
+            throw new Error('API key invalid or quota exceeded.');
+          }
+          throw new Error(err.error?.message || 'API call failed');
+        }
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error('No content returned.');
+
+        let cleaned = text.trim();
+        if (cleaned.startsWith('```html')) cleaned = cleaned.replace(/^```html/,'').replace(/```$/,'').trim();
+        else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/,'').replace(/```$/,'').trim();
+
+        // Show result
+        mergeProgress.classList.add('hidden');
+        mergeResult.classList.remove('hidden');
+        mergePreview.innerHTML = cleaned;
+        logMessage('AI synthesis completed.', 'success');
+
+        // Store for download
+        window.synthesizedContent = cleaned;
+
+      } catch (err) {
+        showError('Synthesis error: ' + err.message);
+        logMessage('Synthesis error: ' + err.message, 'error');
+        mergeProgress.classList.add('hidden');
+      } finally {
+        mergeSynthesizeBtn.disabled = false;
+      }
+    });
+
+    // Download synthesized as .docx
+    mergeDownloadBtn.addEventListener('click', async () => {
+      if (!window.synthesizedContent) {
+        showError('No synthesized content to download.');
+        return;
+      }
+      try {
+        const { Document, Packer, Paragraph, TextRun, HeadingLevel } = docx;
+        // Extract text from HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = window.synthesizedContent;
+        const textContent = tempDiv.textContent || tempDiv.innerText || '';
+        const lines = textContent.split('\n').filter(line => line.trim() !== '');
+        const children = [];
+        lines.forEach(line => {
+          children.push(new Paragraph({
+            children: [new TextRun({ text: line, size: 24 })],
+            spacing: { after: 120 }
+          }));
+        });
+        const doc = new Document({ sections: [{ properties: {}, children }] });
+        const blob = await Packer.toBlob(doc);
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'synthesized_document.docx';
+        link.click();
+        URL.revokeObjectURL(link.href);
+        logMessage('Synthesized document downloaded.', 'success');
+      } catch (err) {
+        showError('Error creating .docx: ' + err.message);
+      }
+    });
+
+    // ─── Start ───
     initApp();
   </script>
 </body>
-  </html>
+                    </html>
