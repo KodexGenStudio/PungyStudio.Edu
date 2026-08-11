@@ -109,6 +109,17 @@
       .border-red-800 { border-color: #ef4444; }
       .text-red-200 { color: #ef4444; }
     }
+    /* Ensures radio labels are clickable */
+    #questions-container label {
+      cursor: pointer;
+    }
+    #questions-container input[type="radio"] {
+      cursor: pointer;
+    }
+    .locked-radio {
+      opacity: 0.6;
+      cursor: not-allowed !important;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center py-6 px-4">
@@ -120,7 +131,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Pungystudio AI</span>
-          <span class="text-xs text-slate-400 font-mono">v4.4</span>
+          <span class="text-xs text-slate-400 font-mono">v4.5</span>
         </div>
         <h1 class="text-2xl font-bold text-white mt-1">Document & AI Study Suite</h1>
       </div>
@@ -163,6 +174,16 @@
           Get Started 🚀
         </button>
         <p class="text-xs text-slate-400 mt-3" id="landing-subtext">You'll answer 10 computer‑abbreviation questions – need 5 correct to unlock.</p>
+        <!-- API fallback area (hidden initially) -->
+        <div id="api-fallback" class="hidden mt-6 p-4 border border-red-500/50 rounded-xl bg-red-950/30 text-left">
+          <p class="text-sm text-red-300 font-semibold">⚠️ Gemini API key is invalid or quota exhausted.</p>
+          <p class="text-xs text-slate-300 mt-1">You can get your own free API key from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-indigo-400 underline">Google Cloud Console</a> and enter it below:</p>
+          <div class="flex flex-col sm:flex-row gap-2 mt-3">
+            <input type="text" id="user-api-key" placeholder="Paste your API key here" class="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200" />
+            <button id="save-api-key-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm transition-colors">Use this key</button>
+          </div>
+          <p class="text-xs text-slate-400 mt-2">The key will be stored locally in your browser.</p>
+        </div>
       </div>
     </div>
 
@@ -318,7 +339,7 @@
 
   <script>
     // ================================================================
-    // Pungystudio AI – Full app with exam mode & timer
+    // Pungystudio AI – Full app with fixes & API fallback
     // ================================================================
 
     const JSON_BIN_ID = '6a7a4f06da38895dfed2f54d';
@@ -337,6 +358,9 @@
     const statusText = document.getElementById('status-text');
     const progressFill = document.getElementById('progress-fill');
     const hzValue = document.getElementById('hz-value');
+    const apiFallback = document.getElementById('api-fallback');
+    const userApiKeyInput = document.getElementById('user-api-key');
+    const saveApiKeyBtn = document.getElementById('save-api-key-btn');
 
     // ... all other DOM refs (same as before)
     const dropZone = document.getElementById('drop-zone');
@@ -397,8 +421,8 @@
     let quizLocked = false;
 
     // Exam state
-    let examMode = 'instant'; // 'instant' or 'after'
-    let examTimeLimit = 0; // minutes
+    let examMode = 'instant';
+    let examTimeLimit = 0;
     let examTimer = null;
     let examTimeLeft = 0;
     let examSubmitted = false;
@@ -454,17 +478,43 @@
     }
 
     // ------------------------------------------------------------------
-    // 2. Fetch Gemini API Key (background)
+    // 2. Fetch Gemini API Key (with fallback)
     // ------------------------------------------------------------------
     async function fetchGeminiKey() {
-      const url = `https://api.jsonbin.io/v3/b/${JSON_BIN_ID}/latest`;
-      const response = await fetch(url, { headers: { 'X-Master-Key': JSON_BIN_MASTER_KEY } });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      const key = data.record.GEMINI_API_KEY;
-      if (!key) throw new Error('No GEMINI_API_KEY found.');
-      return key;
+      // First check if user has stored their own key
+      const userKey = localStorage.getItem('pungystudio_user_api_key');
+      if (userKey) {
+        console.log('Using user-provided API key');
+        return userKey;
+      }
+      // Otherwise fetch from JSON Bin
+      try {
+        const url = `https://api.jsonbin.io/v3/b/${JSON_BIN_ID}/latest`;
+        const response = await fetch(url, { headers: { 'X-Master-Key': JSON_BIN_MASTER_KEY } });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const key = data.record.GEMINI_API_KEY;
+        if (!key) throw new Error('No GEMINI_API_KEY found.');
+        return key;
+      } catch (err) {
+        // If JSON Bin fails, show fallback UI
+        apiFallback.classList.remove('hidden');
+        throw new Error('Failed to fetch API key from JSON Bin. Please enter your own key below.');
+      }
     }
+
+    // Save user's own API key
+    saveApiKeyBtn.addEventListener('click', () => {
+      const key = userApiKeyInput.value.trim();
+      if (key) {
+        localStorage.setItem('pungystudio_user_api_key', key);
+        apiFallback.classList.add('hidden');
+        // Reload the app to use new key
+        location.reload();
+      } else {
+        alert('Please paste a valid API key.');
+      }
+    });
 
     // ------------------------------------------------------------------
     // 3. Generate Verification Quiz
@@ -478,6 +528,11 @@
       });
       if (!response.ok) {
         const err = await response.json();
+        // If error indicates quota or key invalid, show fallback
+        if (response.status === 429 || response.status === 403 || response.status === 400) {
+          apiFallback.classList.remove('hidden');
+          throw new Error('API key invalid or quota exceeded. Please enter your own key.');
+        }
         throw new Error(err.error?.message || 'Gemini API error');
       }
       const data = await response.json();
@@ -640,10 +695,12 @@
           statusDot.className = 'w-2 h-2 rounded-full bg-red-500';
           statusText.textContent = 'API error';
           console.error(err);
+          // Show error on landing
           const errMsg = document.createElement('p');
           errMsg.className = 'text-red-400 text-sm mt-4';
           errMsg.textContent = '⚠️ ' + err.message;
           document.querySelector('#landing-page .text-slate-300')?.after(errMsg);
+          // The fallback UI is already shown by fetchGeminiKey or generateVerificationQuiz
         }
       })();
 
@@ -671,7 +728,7 @@
     }
 
     // ------------------------------------------------------------------
-    // 9. Document handling (unchanged)
+    // 9. Document handling – FIXED PDF handling
     // ------------------------------------------------------------------
     function showError(msg) {
       errorBox.textContent = msg;
@@ -726,7 +783,6 @@
       } else if (activeTab === 'exam') {
         tabSummary.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all';
         examPane.classList.remove('hidden');
-        // Reset exam state if needed
         examIntro.classList.remove('hidden');
         examSettings.classList.add('hidden');
         examActiveArea.classList.add('hidden');
@@ -740,6 +796,7 @@
     tabSummary.addEventListener('click', () => switchTab('summary'));
     tabExam.addEventListener('click', () => switchTab('exam'));
 
+    // FIX: Proper PDF handling – first check MIME type, then extension
     function handleFile(file) {
       hideError();
       if (!file) return;
@@ -748,6 +805,23 @@
       metaType.textContent = file.type || 'Binary / Unknown';
       const extension = file.name.split('.').pop().toLowerCase();
 
+      // PDF – check MIME type first, then extension
+      if (file.type === 'application/pdf' || extension === 'pdf') {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const dataUrl = e.target.result;
+          // Set rawFileText to a placeholder (PDFs cannot be parsed for text)
+          rawFileText = `[PDF Document: ${file.name}]`;
+          // Display PDF using iframe
+          originalViewerHtml = `<iframe src="${dataUrl}" class="w-full h-[600px] border-0 rounded-lg"></iframe>`;
+          viewerContent.innerHTML = originalViewerHtml;
+          showWorkspace();
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      // Word (.docx)
       if (extension === 'docx') {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -765,7 +839,9 @@
         reader.readAsArrayBuffer(file);
         return;
       }
-      if (['txt','md','json','js','html','css','csv','log'].includes(extension) || file.type.startsWith('text/')) {
+
+      // Text files (txt, md, json, code, etc.)
+      if (['txt','md','json','js','html','css','csv','log','xml','yaml','yml'].includes(extension) || file.type.startsWith('text/')) {
         const reader = new FileReader();
         reader.onload = function(e) {
           rawFileText = e.target.result;
@@ -776,6 +852,8 @@
         reader.readAsText(file);
         return;
       }
+
+      // Images
       if (['jpg','jpeg','png','gif','webp','svg'].includes(extension) || file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -787,18 +865,8 @@
         reader.readAsDataURL(file);
         return;
       }
-      if (extension === 'pdf' || file.type === 'application/pdf') {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          rawFileText = `[PDF Document: ${file.name}]`;
-          originalViewerHtml = `<iframe src="${e.target.result}" class="w-full h-[500px] border-0 rounded-lg"></iframe>`;
-          viewerContent.innerHTML = originalViewerHtml;
-          showWorkspace();
-        };
-        reader.readAsDataURL(file);
-        return;
-      }
-      showError('Unsupported file format.');
+
+      showError('Unsupported file format. Please upload a PDF, Word document, text file, or image.');
     }
 
     dropZone.addEventListener('click', () => fileInput.click());
@@ -816,22 +884,35 @@
     changeFileBtn.addEventListener('click', resetWorkspace);
 
     // ------------------------------------------------------------------
-    // 10. AI Functions using Gemini 3.6 Flash
+    // 10. AI Functions using Gemini 3.6 Flash (with fallback handling)
     // ------------------------------------------------------------------
     async function callGemini(prompt) {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || 'API call failed');
+      if (!geminiApiKey) {
+        throw new Error('API key not available. Please enter your own key.');
       }
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) throw new Error('No content returned.');
-      return text;
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        if (!response.ok) {
+          const err = await response.json();
+          if (response.status === 429 || response.status === 403 || response.status === 400) {
+            apiFallback.classList.remove('hidden');
+            throw new Error('API key invalid or quota exceeded. Please enter your own key.');
+          }
+          throw new Error(err.error?.message || 'API call failed');
+        }
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error('No content returned.');
+        return text;
+      } catch (err) {
+        // Show fallback if not already shown
+        apiFallback.classList.remove('hidden');
+        throw err;
+      }
     }
 
     aiIfyBtn.addEventListener('click', async () => {
@@ -894,7 +975,7 @@
     regenSummaryBtn.addEventListener('click', runSummaryGeneration);
 
     // ------------------------------------------------------------------
-    // 11. Exam Generator with Mode & Timer
+    // 11. Exam Generator with Mode & Timer (fix click issue)
     // ------------------------------------------------------------------
     generateExamBtn.addEventListener('click', async () => {
       hideError();
@@ -915,12 +996,11 @@
         examSettings.classList.remove('hidden');
         examActiveArea.classList.add('hidden');
         resultsArea.classList.add('hidden');
-        // Reset timer display
         timerDisplay.classList.add('hidden');
         clearInterval(examTimer);
         // Pre-select default mode (instant)
         document.querySelector('input[name="exam-mode"][value="instant"]').checked = true;
-        timerSelect.value = '10'; // default 10 min
+        timerSelect.value = '10';
       } catch (err) {
         showError('Exam generation error: ' + err.message);
       } finally {
@@ -942,7 +1022,7 @@
       resultsArea.classList.add('hidden');
       // Start timer
       if (examTimeLimit > 0) {
-        examTimeLeft = examTimeLimit * 60; // seconds
+        examTimeLeft = examTimeLimit * 60;
         timerDisplay.classList.remove('hidden');
         updateTimerDisplay();
         examTimer = setInterval(() => {
@@ -951,7 +1031,6 @@
           if (examTimeLeft <= 0) {
             clearInterval(examTimer);
             timerDisplay.classList.add('hidden');
-            // Auto-submit
             if (!examSubmitted) {
               examSubmitted = true;
               submitExam();
@@ -975,7 +1054,7 @@
       }
     }
 
-    // Render exam questions with given mode
+    // Render exam questions with given mode – FIX: ensure radios are clickable
     function renderExamQuestions(mode) {
       questionsContainer.innerHTML = '';
       userAnswers = {};
@@ -988,7 +1067,7 @@
         q.options.forEach(opt => {
           optsHtml += `
             <label class="flex items-start space-x-3 p-3 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 cursor-pointer transition-colors" id="exam-lbl-${qIndex}-${opt.replace(/\s/g,'')}">
-              <input type="radio" name="exam-q-${qIndex}" value="${opt}" class="mt-1 text-indigo-500 focus:ring-indigo-500" data-q="${qIndex}" data-opt="${opt}">
+              <input type="radio" name="exam-q-${qIndex}" value="${opt}" class="mt-1 text-indigo-500 focus:ring-indigo-500" data-q="${qIndex}" data-opt="${opt}" style="cursor:pointer;">
               <span class="text-sm text-slate-200">${opt}</span>
             </label>
           `;
@@ -1014,8 +1093,9 @@
           radio.addEventListener('change', handleExamInstantAnswer);
         });
       } else {
-        // 'after' mode: just store choices, no immediate feedback
+        // 'after' mode: just store choices, no immediate feedback, and ensure radios are not disabled
         document.querySelectorAll('#questions-container input[type="radio"]').forEach(radio => {
+          radio.disabled = false; // ensure enabled
           radio.addEventListener('change', (e) => {
             const qIdx = parseInt(e.target.dataset.q);
             userAnswers[qIdx] = e.target.value;
@@ -1033,7 +1113,6 @@
       const card = document.getElementById(`exam-q-${qIndex}`);
       const feedback = document.getElementById(`exam-feedback-${qIndex}`);
       
-      // If already answered, ignore
       if (card.dataset.answered === 'true') {
         radio.checked = false;
         return;
@@ -1064,11 +1143,11 @@
       const expl = document.getElementById(`exam-expl-${qIndex}`);
       if (expl) expl.classList.remove('hidden');
 
-      // Store user's choice (for reference)
+      // Store user's choice
       userAnswers[qIndex] = selected;
     }
 
-    // Submit exam (for both modes)
+    // Submit exam
     submitExamBtn.addEventListener('click', () => {
       if (examSubmitted) return;
       examSubmitted = true;
@@ -1078,14 +1157,13 @@
     });
 
     function submitExam() {
-      // For 'after' mode, we need to collect all answers from radio buttons
+      // For 'after' mode, collect all answers from radio buttons
       if (examMode === 'after') {
-        // collect answers from DOM
         document.querySelectorAll('#questions-container input[type="radio"]:checked').forEach(radio => {
           const qIdx = parseInt(radio.dataset.q);
           userAnswers[qIdx] = radio.value;
         });
-        // Also mark unanswered
+        // Mark unanswered
         examQuestions.forEach((q, idx) => {
           if (!(idx in userAnswers)) userAnswers[idx] = null;
         });
@@ -1124,10 +1202,8 @@
     // Retake exam
     retakeBtn.addEventListener('click', () => {
       resultsArea.classList.add('hidden');
-      // Go back to settings
       examActiveArea.classList.add('hidden');
       examSettings.classList.remove('hidden');
-      // Reset userAnswers
       userAnswers = {};
       examSubmitted = false;
       clearInterval(examTimer);
