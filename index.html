@@ -630,6 +630,8 @@
             padding: 0.2rem 0.6rem;
             border-radius: 9999px;
             border: 1px solid var(--border-color);
+            min-width: 48px;
+            text-align: center;
         }
 
         /* ─── HISTORY ─── */
@@ -854,6 +856,7 @@
             .header-right .hz-badge {
                 font-size: 0.5rem;
                 padding: 0.15rem 0.4rem;
+                min-width: 36px;
             }
             .admin-lock-icon {
                 font-size: 1rem;
@@ -916,7 +919,7 @@
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-2">
                         <span class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[0.6rem] font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider shadow-lg">Pungystudio</span>
-                        <span class="text-[0.55rem] text-slate-500 font-mono bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700">v7.3 Pro</span>
+                        <span class="text-[0.55rem] text-slate-500 font-mono bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700">v7.4 Pro</span>
                     </div>
                     <h1 class="text-lg md:text-xl font-bold text-white hidden sm:block">Document &amp; AI Study Suite</h1>
                 </div>
@@ -1193,7 +1196,7 @@
 
     <script>
         // ════════════════════════════════════════════════════════════════
-        // Pungystudio AI – v7.3 Pro – All buttons clickable
+        // Pungystudio AI – v7.4 Pro – Fixed Siri animation + 1000Hz support
         // ════════════════════════════════════════════════════════════════
 
         const JSON_BIN_ID = '6a7a4f06da38895dfed2f54d';
@@ -1322,6 +1325,7 @@
         let fallbackUserKey = localStorage.getItem('pungystudio_user_api_key') || '';
         let currentUser = null;
         let hasFullText = false;
+        let lastExamIntroHTML = ''; // Store the original intro HTML
 
         // ─── Activity Log ───
         function logMessage(message, type = 'info') {
@@ -1334,25 +1338,43 @@
         }
         clearLogBtn.addEventListener('click', () => { activityLog.innerHTML = ''; });
 
-        // ─── Refresh Rate ───
+        // ─── Refresh Rate (supports up to 1000Hz) ───
         (function detectRefreshRate() {
-            let frameCount = 0,
-                startTime = performance.now(),
-                lastHz = 60;
+            let frameCount = 0;
+            let lastHz = 60;
+            let measuring = false;
+            let startTime = 0;
 
-            function countFrames() {
-                frameCount++;
-                const elapsed = performance.now() - startTime;
-                if (elapsed >= 1000) {
-                    const hz = Math.round(frameCount / (elapsed / 1000));
-                    if (hz > 10) lastHz = hz;
-                    hzValue.textContent = lastHz;
+            function measure() {
+                if (!measuring) {
+                    measuring = true;
                     frameCount = 0;
                     startTime = performance.now();
+                    requestAnimationFrame(countFrame);
                 }
-                requestAnimationFrame(countFrames);
             }
-            requestAnimationFrame(countFrames);
+
+            function countFrame() {
+                frameCount++;
+                const elapsed = performance.now() - startTime;
+                if (elapsed >= 500) {
+                    // 500ms window gives good accuracy for high refresh rates
+                    const hz = Math.round(frameCount / (elapsed / 1000));
+                    // Clamp to reasonable range (10-1000)
+                    if (hz >= 10 && hz <= 1000) {
+                        lastHz = hz;
+                    }
+                    hzValue.textContent = lastHz;
+                    measuring = false;
+                    // Schedule next measurement after a short pause
+                    setTimeout(measure, 800);
+                } else {
+                    requestAnimationFrame(countFrame);
+                }
+            }
+
+            // Start the measurement cycle
+            measure();
         })();
 
         function setStatus(ready, text) {
@@ -2078,7 +2100,10 @@
             keyconceptsActive.classList.remove('hidden');
         }
 
+        // ─── FIXED: Exam Siri wave with proper cleanup ───
         function showSiriWaveInExam(message = 'AI is generating your exam...') {
+            // Store the original intro HTML so we can restore it
+            lastExamIntroHTML = examIntro.innerHTML;
             examIntro.innerHTML = `
                 <div class="loading-overlay">
                     <div class="siri-wave">
@@ -2093,6 +2118,38 @@
             examSettings.classList.add('hidden');
             examActiveArea.classList.add('hidden');
             resultsArea.classList.add('hidden');
+        }
+
+        function clearSiriWaveFromExam() {
+            // Restore the original intro content
+            if (lastExamIntroHTML) {
+                examIntro.innerHTML = lastExamIntroHTML;
+            } else {
+                // Fallback: rebuild the intro
+                examIntro.innerHTML = `
+                    <h3 class="text-xl font-bold text-white">AI Exam Generator</h3>
+                    <p class="text-sm text-slate-400 max-w-md mx-auto">Generate a complete multiple‑choice assessment from your document.</p>
+                    <button id="generate-exam-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
+                        <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="exam-btn-text">Generate Exam</span>
+                    </button>
+                `;
+                // Re-bind the generate exam button
+                const newBtn = examIntro.querySelector('#generate-exam-btn');
+                if (newBtn) {
+                    newBtn.addEventListener('click', generateExamBtn._listener || (() => {}));
+                }
+            }
+            examIntro.classList.remove('hidden');
+            examSettings.classList.add('hidden');
+            examActiveArea.classList.add('hidden');
+            resultsArea.classList.add('hidden');
+            // Clear timer
+            clearInterval(examTimer);
+            timerDisplay.classList.add('hidden');
         }
 
         // ─── Check if full text is available ───
@@ -2159,10 +2216,37 @@
                 tabExam.className =
                     'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
                 examPane.classList.remove('hidden');
-                examIntro.classList.remove('hidden');
-                examSettings.classList.add('hidden');
-                examActiveArea.classList.add('hidden');
-                resultsArea.classList.add('hidden');
+                // Don't hide the exam content if it's already generated
+                // Just ensure the right panes are visible
+                if (examQuestions.length > 0 && !examSettings.classList.contains('hidden')) {
+                    // Exam is ready but not started
+                    examIntro.classList.add('hidden');
+                    examSettings.classList.remove('hidden');
+                    examActiveArea.classList.add('hidden');
+                    resultsArea.classList.add('hidden');
+                } else if (examActiveArea.classList.contains('hidden') && !examSettings.classList.contains('hidden')) {
+                    examIntro.classList.add('hidden');
+                    examSettings.classList.remove('hidden');
+                    examActiveArea.classList.add('hidden');
+                    resultsArea.classList.add('hidden');
+                } else if (!examActiveArea.classList.contains('hidden')) {
+                    // Exam is in progress
+                    examIntro.classList.add('hidden');
+                    examSettings.classList.add('hidden');
+                    examActiveArea.classList.remove('hidden');
+                    resultsArea.classList.add('hidden');
+                } else if (!resultsArea.classList.contains('hidden')) {
+                    // Results are showing
+                    examIntro.classList.add('hidden');
+                    examSettings.classList.add('hidden');
+                    examActiveArea.classList.add('hidden');
+                    resultsArea.classList.remove('hidden');
+                } else {
+                    examIntro.classList.remove('hidden');
+                    examSettings.classList.add('hidden');
+                    examActiveArea.classList.add('hidden');
+                    resultsArea.classList.add('hidden');
+                }
                 clearInterval(examTimer);
                 timerDisplay.classList.add('hidden');
             } else if (activeTab === 'keyconcepts') {
@@ -2523,6 +2607,11 @@
                 currentFilename = null;
                 updateProjectDisplay(null);
                 hasFullText = false;
+                // Reset exam state
+                examQuestions = [];
+                examSubmitted = false;
+                userAnswers = {};
+                lastExamIntroHTML = '';
             }
 
             function showWorkspace() {
@@ -2877,8 +2966,9 @@
             generateKeyConceptsBtn.addEventListener('click', runKeyConceptsGeneration);
             regenKeyConceptsBtn.addEventListener('click', runKeyConceptsGeneration);
 
-            // ─── Exam Generator ───
-            generateExamBtn.addEventListener('click', async () => {
+            // ─── FIXED: Exam Generator ───
+            // Store the listener so we can re-bind if needed
+            let examGenerateListener = async function() {
                 hideError();
                 if (!isVerified) { showError('Verification required.'); return; }
                 if (!currentUser) { showError('Please login first.'); return; }
@@ -2911,6 +3001,32 @@
                     else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '')
                         .trim();
                     examQuestions = JSON.parse(cleaned);
+
+                    // ─── FIX: Clear the Siri wave and show settings ───
+                    // Restore the intro with a success message
+                    examIntro.innerHTML = `
+                        <h3 class="text-xl font-bold text-white">✅ Exam Generated!</h3>
+                        <p class="text-sm text-emerald-400 max-w-md mx-auto">${examQuestions.length} questions ready. Configure settings below and start the exam.</p>
+                        <button id="generate-exam-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
+                            <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span id="exam-btn-text">Regenerate Exam</span>
+                        </button>
+                    `;
+                    // Re-bind the regenerate button
+                    const newBtn = examIntro.querySelector('#generate-exam-btn');
+                    if (newBtn) {
+                        newBtn.addEventListener('click', examGenerateListener);
+                    }
+                    // Re-bind the spinner and text references
+                    window.examSpinner = document.getElementById('exam-spinner');
+                    window.examBtnText = document.getElementById('exam-btn-text');
+                    // Update the global references
+                    Object.assign(window, { examSpinner: document.getElementById('exam-spinner'), examBtnText: document
+                            .getElementById('exam-btn-text') });
+
                     examIntro.classList.remove('hidden');
                     examSettings.classList.remove('hidden');
                     examActiveArea.classList.add('hidden');
@@ -2923,15 +3039,34 @@
                 } catch (err) {
                     showError('Exam generation error: ' + err.message);
                     logMessage('Exam error: ' + err.message, 'error');
+                    // Restore the intro
+                    examIntro.innerHTML = `
+                        <h3 class="text-xl font-bold text-white">AI Exam Generator</h3>
+                        <p class="text-sm text-slate-400 max-w-md mx-auto">Generate a complete multiple‑choice assessment from your document.</p>
+                        <button id="generate-exam-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
+                            <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span id="exam-btn-text">Generate Exam</span>
+                        </button>
+                    `;
+                    const retryBtn = examIntro.querySelector('#generate-exam-btn');
+                    if (retryBtn) retryBtn.addEventListener('click', examGenerateListener);
                 } finally {
                     examSpinner.classList.add('hidden');
                     examBtnText.textContent = 'Generate Exam';
                     generateExamBtn.disabled = false;
                 }
-            });
+            };
+
+            // Store the listener for potential re-binding
+            generateExamBtn._listener = examGenerateListener;
+            generateExamBtn.addEventListener('click', examGenerateListener);
 
             // ─── Start Exam ───
             startExamBtn.addEventListener('click', () => {
+                if (examQuestions.length === 0) { showAdminToast('Please generate an exam first.', 'warning'); return; }
                 const modeRadio = document.querySelector('input[name="exam-mode"]:checked');
                 examMode = modeRadio ? modeRadio.value : 'instant';
                 examTimeLimit = parseInt(timerSelect.value) || 0;
@@ -3316,4 +3451,4 @@
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
-                                </html>
+                        </html>
