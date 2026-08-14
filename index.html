@@ -822,6 +822,25 @@
             cursor: pointer;
         }
 
+        /* ─── Theory Exam Styles ─── */
+        .theory-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .theory-result-card {
+            transition: all 0.2s;
+        }
+        .theory-result-card:hover {
+            border-color: #818cf8;
+        }
+        .image-upload-preview {
+            max-width: 120px;
+            max-height: 120px;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            margin-top: 4px;
+        }
+
         @media (max-width: 640px) {
             .admin-modal .modal-box {
                 padding: 1.25rem;
@@ -882,6 +901,13 @@
                 font-size: 0.6rem;
                 padding: 0.15rem 0.5rem;
             }
+            .theory-textarea {
+                min-height: 80px;
+            }
+            .image-upload-preview {
+                max-width: 80px;
+                max-height: 80px;
+            }
         }
     </style>
 </head>
@@ -919,7 +945,7 @@
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-2">
                         <span class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[0.6rem] font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider shadow-lg">Pungystudio</span>
-                        <span class="text-[0.55rem] text-slate-500 font-mono bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700">v7.4 Pro</span>
+                        <span class="text-[0.55rem] text-slate-500 font-mono bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700">v7.6 Pro</span>
                     </div>
                     <h1 class="text-lg md:text-xl font-bold text-white hidden sm:block">Document &amp; AI Study Suite</h1>
                 </div>
@@ -1095,7 +1121,12 @@
                     <div id="exam-pane" class="hidden glass rounded-2xl border border-slate-700/50 p-6 min-h-[450px]">
                         <div id="exam-intro" class="text-center py-12 space-y-4 animate-fade-up">
                             <h3 class="text-xl font-bold text-white">AI Exam Generator</h3>
-                            <p class="text-sm text-slate-400 max-w-md mx-auto">Generate a complete multiple‑choice assessment from your document.</p>
+                            <p class="text-sm text-slate-400 max-w-md mx-auto">Choose exam type and generate questions from your document.</p>
+                            <!-- Exam Type Selection -->
+                            <div class="flex flex-wrap justify-center gap-6 mt-4">
+                                <label class="block text-sm text-slate-200"><input type="radio" name="exam-type-select" value="objective" checked class="mr-2 accent-indigo-500"> Objective (MCQ)</label>
+                                <label class="block text-sm text-slate-200"><input type="radio" name="exam-type-select" value="theory" class="mr-2 accent-indigo-500"> Theory (Written)</label>
+                            </div>
                             <button id="generate-exam-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
                                 <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -1133,9 +1164,13 @@
                                     <span id="timer-display" class="text-xs bg-red-950/60 text-red-300 border border-red-800 px-2.5 py-1 rounded-full font-mono hidden">⏱️ <span id="timer-count">00:00</span></span>
                                 </div>
                             </div>
+                            <!-- Objective Questions Container -->
                             <div id="questions-container" class="space-y-6"></div>
-                            <div class="flex justify-end pt-4 border-t border-slate-800">
+                            <!-- Theory Questions Container -->
+                            <div id="theory-container" class="space-y-6 hidden"></div>
+                            <div class="flex flex-wrap justify-end gap-3 pt-4 border-t border-slate-800">
                                 <button id="submit-exam-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm hover:scale-105">Submit Answers</button>
+                                <button id="submit-theory-btn" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm hover:scale-105">Submit Theory Answers</button>
                             </div>
                         </div>
                         <div id="results-area" class="hidden text-center py-8 space-y-3 glass rounded-2xl border border-slate-700/50 p-6 animate-fade-up">
@@ -1144,6 +1179,8 @@
                             <p id="score-feedback" class="text-sm text-slate-300"></p>
                             <button id="retake-btn" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg transition-all duration-200">Retake Exam</button>
                         </div>
+                        <!-- Theory Results Area -->
+                        <div id="theory-results-area" class="hidden mt-6 space-y-4 animate-fade-up"></div>
                     </div>
 
                     <!-- Key Concepts -->
@@ -1196,7 +1233,7 @@
 
     <script>
         // ════════════════════════════════════════════════════════════════
-        // Pungystudio AI – v7.4 Pro – Fixed Siri animation + 1000Hz support
+        // Pungystudio AI – v7.6 Pro – Fixed Exam Flow with Theory & Image Upload
         // ════════════════════════════════════════════════════════════════
 
         const JSON_BIN_ID = '6a7a4f06da38895dfed2f54d';
@@ -1262,11 +1299,13 @@
             examSettings = $('exam-settings'),
             startExamBtn = $('start-exam-btn');
         const timerSelect = $('timer-select'),
-            examActiveArea = $('exam-active-area'),
-            questionsContainer = $('questions-container');
-        const totalQuestionsBadge = $('total-questions-badge'),
-            submitExamBtn = $('submit-exam-btn'),
-            resultsArea = $('results-area');
+            examActiveArea = $('exam-active-area');
+        const questionsContainer = $('questions-container');
+        const theoryContainer = $('theory-container');
+        const totalQuestionsBadge = $('total-questions-badge');
+        const submitExamBtn = $('submit-exam-btn');
+        const submitTheoryBtn = $('submit-theory-btn');
+        const resultsArea = $('results-area');
         const scoreDisplay = $('score-display'),
             scoreFeedback = $('score-feedback'),
             retakeBtn = $('retake-btn');
@@ -1299,6 +1338,7 @@
             logoutBtn = $('logout-btn'),
             userBadge = $('user-badge'),
             currentUsername = $('current-username');
+        const theoryResultsArea = $('theory-results-area');
 
         // ─── Global state ───
         let isVerified = false,
@@ -1325,7 +1365,9 @@
         let fallbackUserKey = localStorage.getItem('pungystudio_user_api_key') || '';
         let currentUser = null;
         let hasFullText = false;
-        let lastExamIntroHTML = ''; // Store the original intro HTML
+        let lastExamIntroHTML = '';
+        let currentExamType = 'objective'; // 'objective' or 'theory'
+        let theoryImages = {}; // store base64 images per question index
 
         // ─── Activity Log ───
         function logMessage(message, type = 'info') {
@@ -1338,7 +1380,7 @@
         }
         clearLogBtn.addEventListener('click', () => { activityLog.innerHTML = ''; });
 
-        // ─── Refresh Rate (supports up to 1000Hz) ───
+        // ─── Refresh Rate ───
         (function detectRefreshRate() {
             let frameCount = 0;
             let lastHz = 60;
@@ -1358,22 +1400,17 @@
                 frameCount++;
                 const elapsed = performance.now() - startTime;
                 if (elapsed >= 500) {
-                    // 500ms window gives good accuracy for high refresh rates
                     const hz = Math.round(frameCount / (elapsed / 1000));
-                    // Clamp to reasonable range (10-1000)
                     if (hz >= 10 && hz <= 1000) {
                         lastHz = hz;
                     }
                     hzValue.textContent = lastHz;
                     measuring = false;
-                    // Schedule next measurement after a short pause
                     setTimeout(measure, 800);
                 } else {
                     requestAnimationFrame(countFrame);
                 }
             }
-
-            // Start the measurement cycle
             measure();
         })();
 
@@ -2100,9 +2137,7 @@
             keyconceptsActive.classList.remove('hidden');
         }
 
-        // ─── FIXED: Exam Siri wave with proper cleanup ───
         function showSiriWaveInExam(message = 'AI is generating your exam...') {
-            // Store the original intro HTML so we can restore it
             lastExamIntroHTML = examIntro.innerHTML;
             examIntro.innerHTML = `
                 <div class="loading-overlay">
@@ -2118,36 +2153,42 @@
             examSettings.classList.add('hidden');
             examActiveArea.classList.add('hidden');
             resultsArea.classList.add('hidden');
+            theoryResultsArea.classList.add('hidden');
         }
 
         function clearSiriWaveFromExam() {
-            // Restore the original intro content
-            if (lastExamIntroHTML) {
-                examIntro.innerHTML = lastExamIntroHTML;
-            } else {
-                // Fallback: rebuild the intro
-                examIntro.innerHTML = `
-                    <h3 class="text-xl font-bold text-white">AI Exam Generator</h3>
-                    <p class="text-sm text-slate-400 max-w-md mx-auto">Generate a complete multiple‑choice assessment from your document.</p>
-                    <button id="generate-exam-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
-                        <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span id="exam-btn-text">Generate Exam</span>
-                    </button>
-                `;
-                // Re-bind the generate exam button
-                const newBtn = examIntro.querySelector('#generate-exam-btn');
-                if (newBtn) {
-                    newBtn.addEventListener('click', generateExamBtn._listener || (() => {}));
-                }
+            // Restore the intro with the type selector
+            examIntro.innerHTML = `
+                <h3 class="text-xl font-bold text-white">AI Exam Generator</h3>
+                <p class="text-sm text-slate-400 max-w-md mx-auto">Choose exam type and generate questions from your document.</p>
+                <div class="flex flex-wrap justify-center gap-6 mt-4">
+                    <label class="block text-sm text-slate-200"><input type="radio" name="exam-type-select" value="objective" checked class="mr-2 accent-indigo-500"> Objective (MCQ)</label>
+                    <label class="block text-sm text-slate-200"><input type="radio" name="exam-type-select" value="theory" class="mr-2 accent-indigo-500"> Theory (Written)</label>
+                </div>
+                <button id="generate-exam-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
+                    <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span id="exam-btn-text">Generate Exam</span>
+                </button>
+            `;
+            // Re-bind the generate button
+            const newBtn = document.getElementById('generate-exam-btn');
+            if (newBtn) {
+                newBtn.addEventListener('click', generateExamBtn._listener || (() => {}));
             }
+            // Re-bind spinner and text
+            window.examSpinner = document.getElementById('exam-spinner');
+            window.examBtnText = document.getElementById('exam-btn-text');
+            Object.assign(window, { examSpinner: document.getElementById('exam-spinner'), examBtnText: document
+                    .getElementById('exam-btn-text') });
+
             examIntro.classList.remove('hidden');
             examSettings.classList.add('hidden');
             examActiveArea.classList.add('hidden');
             resultsArea.classList.add('hidden');
-            // Clear timer
+            theoryResultsArea.classList.add('hidden');
             clearInterval(examTimer);
             timerDisplay.classList.add('hidden');
         }
@@ -2216,36 +2257,48 @@
                 tabExam.className =
                     'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
                 examPane.classList.remove('hidden');
-                // Don't hide the exam content if it's already generated
-                // Just ensure the right panes are visible
-                if (examQuestions.length > 0 && !examSettings.classList.contains('hidden')) {
-                    // Exam is ready but not started
-                    examIntro.classList.add('hidden');
-                    examSettings.classList.remove('hidden');
-                    examActiveArea.classList.add('hidden');
-                    resultsArea.classList.add('hidden');
-                } else if (examActiveArea.classList.contains('hidden') && !examSettings.classList.contains('hidden')) {
-                    examIntro.classList.add('hidden');
-                    examSettings.classList.remove('hidden');
-                    examActiveArea.classList.add('hidden');
-                    resultsArea.classList.add('hidden');
-                } else if (!examActiveArea.classList.contains('hidden')) {
-                    // Exam is in progress
-                    examIntro.classList.add('hidden');
-                    examSettings.classList.add('hidden');
-                    examActiveArea.classList.remove('hidden');
-                    resultsArea.classList.add('hidden');
-                } else if (!resultsArea.classList.contains('hidden')) {
-                    // Results are showing
-                    examIntro.classList.add('hidden');
-                    examSettings.classList.add('hidden');
-                    examActiveArea.classList.add('hidden');
-                    resultsArea.classList.remove('hidden');
+                // Smart restore of exam state
+                if (examQuestions.length > 0) {
+                    if (!examSettings.classList.contains('hidden') || examActiveArea.classList.contains('hidden')) {
+                        if (examQuestions.length > 0 && currentExamType === 'objective' && questionsContainer
+                            .children.length > 0) {
+                            examIntro.classList.add('hidden');
+                            examSettings.classList.add('hidden');
+                            examActiveArea.classList.remove('hidden');
+                            questionsContainer.classList.remove('hidden');
+                            theoryContainer.classList.add('hidden');
+                            resultsArea.classList.add('hidden');
+                            theoryResultsArea.classList.add('hidden');
+                            submitExamBtn.classList.remove('hidden');
+                            submitTheoryBtn.classList.add('hidden');
+                            totalQuestionsBadge.textContent = `${examQuestions.length} Questions`;
+                        } else if (examQuestions.length > 0 && currentExamType === 'theory' && theoryContainer
+                            .children.length > 0) {
+                            examIntro.classList.add('hidden');
+                            examSettings.classList.add('hidden');
+                            examActiveArea.classList.remove('hidden');
+                            questionsContainer.classList.add('hidden');
+                            theoryContainer.classList.remove('hidden');
+                            resultsArea.classList.add('hidden');
+                            theoryResultsArea.classList.add('hidden');
+                            submitExamBtn.classList.add('hidden');
+                            submitTheoryBtn.classList.remove('hidden');
+                            totalQuestionsBadge.textContent = `${examQuestions.length} Theory Questions`;
+                        } else {
+                            // Fallback: show settings
+                            examIntro.classList.add('hidden');
+                            examSettings.classList.remove('hidden');
+                            examActiveArea.classList.add('hidden');
+                            resultsArea.classList.add('hidden');
+                            theoryResultsArea.classList.add('hidden');
+                        }
+                    }
                 } else {
                     examIntro.classList.remove('hidden');
                     examSettings.classList.add('hidden');
                     examActiveArea.classList.add('hidden');
                     resultsArea.classList.add('hidden');
+                    theoryResultsArea.classList.add('hidden');
                 }
                 clearInterval(examTimer);
                 timerDisplay.classList.add('hidden');
@@ -2475,6 +2528,225 @@
             return project;
         }
 
+        // ─── THEORY EXAM FUNCTIONS ───
+
+        function renderTheoryModeDiv() {
+            theoryContainer.innerHTML = '';
+            totalQuestionsBadge.textContent = `${examQuestions.length} Theory Questions`;
+            theoryImages = {};
+            examQuestions.forEach((q, qIndex) => {
+                const card = document.createElement('div');
+                card.className = 'exam-card glass rounded-xl p-5 space-y-3 animate-fade-up';
+                card.id = `theory-q-${qIndex}`;
+                card.innerHTML = `
+                    <p class="font-semibold text-white text-base">Q${qIndex+1}. ${q.question}</p>
+                    <div class="mt-2 space-y-3">
+                        <textarea id="theory-answer-${qIndex}" rows="4" class="theory-textarea w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Write your detailed answer here..."></textarea>
+                        <div class="flex items-center gap-3">
+                            <label class="text-xs text-slate-400 cursor-pointer hover:text-slate-300 transition-colors">
+                                <span>📷 Upload Image (optional)</span>
+                                <input type="file" accept="image/*" class="hidden theory-image-input" data-q="${qIndex}" />
+                            </label>
+                            <div id="theory-image-preview-${qIndex}" class="flex items-center gap-2"></div>
+                        </div>
+                    </div>
+                `;
+                theoryContainer.appendChild(card);
+
+                // Bind image upload
+                const fileInput = card.querySelector('.theory-image-input');
+                const previewDiv = document.getElementById(`theory-image-preview-${qIndex}`);
+                fileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        const base64 = ev.target.result;
+                        theoryImages[qIndex] = base64;
+                        previewDiv.innerHTML = `
+                            <img src="${base64}" class="image-upload-preview" />
+                            <button class="text-xs text-red-400 hover:text-red-300 remove-image-btn" data-q="${qIndex}">✕</button>
+                        `;
+                        // Bind remove
+                        previewDiv.querySelector('.remove-image-btn').addEventListener('click', function() {
+                            delete theoryImages[qIndex];
+                            previewDiv.innerHTML = '';
+                            fileInput.value = '';
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+            submitTheoryBtn.classList.remove('hidden');
+            submitExamBtn.classList.add('hidden');
+            theoryContainer.classList.remove('hidden');
+            questionsContainer.classList.add('hidden');
+        }
+
+        async function submitTheoryAnswers() {
+            if (examSubmitted) return;
+            examSubmitted = true;
+
+            // Gather answers and images
+            let answers = [];
+            let allAnswered = true;
+            examQuestions.forEach((q, idx) => {
+                let answer = document.getElementById(`theory-answer-${idx}`).value.trim();
+                if (!answer) allAnswered = false;
+                answers.push({
+                    question: q.question,
+                    expected: q.expected_answer,
+                    user_answer: answer || '(blank)',
+                    image: theoryImages[idx] || null
+                });
+            });
+
+            if (!allAnswered) {
+                if (!confirm('You have unanswered questions. Are you sure you want to submit?')) {
+                    examSubmitted = false;
+                    return;
+                }
+            }
+
+            // Show Siri wave
+            showSiriWaveInExam('AI is evaluating your answers...');
+            submitTheoryBtn.disabled = true;
+
+            try {
+                let prompt = `You are a strict but fair professor. Evaluate the student's answer against the expected answer. Provide a score (integer out of 10), and specific feedback explaining what was good and what was missing. Be objective and grade based on the key points in the expected answer. If an image is provided, consider the content of the image as part of the answer (e.g., math equations, diagrams, handwriting).\n\n`;
+                answers.forEach((item, i) => {
+                    prompt += `Question ${i+1}: ${item.question}\nExpected Answer: ${item.expected}\nStudent Answer: ${item.user_answer}\n`;
+                    if (item.image) prompt += `Student attached an image (base64 data).\n`;
+                    prompt += `\n`;
+                });
+                prompt += `Return a JSON array of objects with keys: "score" (integer), "feedback" (string), "correct" (boolean). ONLY valid JSON.`;
+
+                // Prepare file data for image(s) if any
+                let fileData = null;
+                // We'll send the prompt as text and include images if any
+                // For simplicity, we'll send images as inlineData in the parts array
+                let parts = [{ text: prompt }];
+                let hasImage = false;
+                answers.forEach((item, idx) => {
+                    if (item.image) {
+                        // Extract mime type and base64 data
+                        const mime = item.image.split(';')[0].split(':')[1];
+                        const data = item.image.split(',')[1];
+                        parts.push({
+                            inlineData: {
+                                mimeType: mime || 'image/jpeg',
+                                data: data
+                            }
+                        });
+                        hasImage = true;
+                    }
+                });
+
+                // Call Gemini with multi-part if images exist
+                let response;
+                if (hasImage) {
+                    // Need to call with parts directly
+                    const keyObj = getNextActiveKey();
+                    if (!keyObj) throw new Error('No active key.');
+                    const apiKey = keyObj.key;
+                    const resp = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts }] })
+                        });
+                    if (!resp.ok) {
+                        const err = await resp.json();
+                        throw new Error(err.error?.message || 'API call failed');
+                    }
+                    const data = await resp.json();
+                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!text) throw new Error('No content returned.');
+                    response = text;
+                } else {
+                    // Use regular call
+                    response = await callGemini(prompt, null);
+                }
+
+                let cleaned = response.trim();
+                if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
+                else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+                let evaluation = JSON.parse(cleaned);
+
+                if (!Array.isArray(evaluation)) {
+                    throw new Error('Invalid response format from AI.');
+                }
+
+                // Clear Siri wave and show results
+                examIntro.innerHTML = `
+                    <h3 class="text-xl font-bold text-white">📝 Theory Exam Results</h3>
+                    <p class="text-sm text-slate-400">AI has evaluated your written answers.</p>
+                `;
+                examIntro.classList.remove('hidden');
+                examSettings.classList.add('hidden');
+                examActiveArea.classList.add('hidden');
+                resultsArea.classList.add('hidden');
+                theoryResultsArea.classList.remove('hidden');
+
+                let totalScore = 0;
+                let resultsHtml = `<div class="space-y-4">`;
+                evaluation.forEach((res, idx) => {
+                    totalScore += res.score;
+                    const isCorrect = res.score >= 5;
+                    resultsHtml += `
+                        <div class="theory-result-card glass rounded-xl p-5 border ${isCorrect ? 'border-emerald-500/50' : 'border-red-500/50'}">
+                            <p class="text-sm font-semibold text-white">Q${idx+1}. ${escapeHtml(answers[idx].question)}</p>
+                            <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <p class="text-xs text-slate-400 font-medium">Your Answer:</p>
+                                    <p class="text-xs text-slate-200 bg-slate-800/50 p-2 rounded border border-slate-700">${escapeHtml(answers[idx].user_answer)}</p>
+                                    ${answers[idx].image ? '<p class="text-xs text-indigo-400 mt-1">📷 Image attached</p>' : ''}
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-400 font-medium">Expected Answer (Key Points):</p>
+                                    <p class="text-xs text-slate-200 bg-indigo-950/30 p-2 rounded border border-indigo-900/50">${escapeHtml(answers[idx].expected)}</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-4 mt-3 pt-3 border-t border-slate-700/50">
+                                <span class="text-sm font-bold ${isCorrect ? 'text-emerald-400' : 'text-red-400'}">Score: ${res.score}/10</span>
+                                <span class="text-xs px-2 py-0.5 rounded-full ${isCorrect ? 'bg-emerald-950/50 text-emerald-400 border border-emerald-800' : 'bg-red-950/50 text-red-400 border border-red-800'}">${isCorrect ? '✅ Correct' : '❌ Needs Improvement'}</span>
+                                <span class="text-xs text-slate-300 flex-1">Feedback: ${res.feedback}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                resultsHtml += `</div>`;
+
+                const maxScore = evaluation.length * 10;
+                resultsHtml += `
+                    <div class="text-center mt-6 p-4 glass rounded-xl border border-indigo-500/30">
+                        <p class="text-xl font-bold text-white">Total Score: <span class="text-indigo-400">${totalScore}</span> / ${maxScore}</p>
+                        <p class="text-sm text-slate-400 mt-1">${totalScore / maxScore >= 0.7 ? '🌟 Great performance!' : totalScore / maxScore >= 0.5 ? '📖 Good effort! Review the feedback.' : '📚 Keep practicing and review the material.'}</p>
+                    </div>
+                `;
+
+                theoryResultsArea.innerHTML = resultsHtml;
+                logMessage(`Theory exam submitted. Total Score: ${totalScore}/${maxScore}`, 'success');
+
+            } catch (err) {
+                showError('Theory evaluation error: ' + err.message);
+                logMessage('Theory evaluation error: ' + err.message, 'error');
+                examSubmitted = false;
+                submitTheoryBtn.disabled = false;
+                // Restore the theory view
+                clearSiriWaveFromExam();
+                // Re-show settings with theory type pre-selected
+                document.querySelector('input[name="exam-type-select"][value="theory"]').checked = true;
+                examIntro.classList.remove('hidden');
+                examSettings.classList.remove('hidden');
+                examActiveArea.classList.add('hidden');
+                resultsArea.classList.add('hidden');
+                theoryResultsArea.classList.add('hidden');
+            } finally {
+                submitTheoryBtn.disabled = false;
+            }
+        }
+
         // ─── INIT ───
         async function initApp() {
             loadUserSession();
@@ -2592,10 +2864,12 @@
                 userAnswers = {};
                 summaryIntro.classList.remove('hidden');
                 summaryActiveArea.classList.add('hidden');
-                examIntro.classList.remove('hidden');
+                // Reset exam UI
+                clearSiriWaveFromExam(); // this will restore the intro with type selector
                 examSettings.classList.add('hidden');
                 examActiveArea.classList.add('hidden');
                 resultsArea.classList.add('hidden');
+                theoryResultsArea.classList.add('hidden');
                 keyconceptsIntro.classList.remove('hidden');
                 keyconceptsActive.classList.add('hidden');
                 hideError();
@@ -2612,6 +2886,15 @@
                 examSubmitted = false;
                 userAnswers = {};
                 lastExamIntroHTML = '';
+                currentExamType = 'objective';
+                theoryResultsArea.classList.add('hidden');
+                theoryResultsArea.innerHTML = '';
+                theoryContainer.classList.add('hidden');
+                theoryContainer.innerHTML = '';
+                questionsContainer.classList.remove('hidden');
+                submitTheoryBtn.classList.add('hidden');
+                submitExamBtn.classList.remove('hidden');
+                theoryImages = {};
             }
 
             function showWorkspace() {
@@ -2966,8 +3249,7 @@
             generateKeyConceptsBtn.addEventListener('click', runKeyConceptsGeneration);
             regenKeyConceptsBtn.addEventListener('click', runKeyConceptsGeneration);
 
-            // ─── FIXED: Exam Generator ───
-            // Store the listener so we can re-bind if needed
+            // ─── FIXED: Exam Generator (with type selection in intro) ───
             let examGenerateListener = async function() {
                 hideError();
                 if (!isVerified) { showError('Verification required.'); return; }
@@ -2978,52 +3260,84 @@
                         );
                     return;
                 }
+
+                // Get selected exam type from intro
+                const typeRadio = document.querySelector('input[name="exam-type-select"]:checked');
+                currentExamType = typeRadio ? typeRadio.value : 'objective';
+
                 examSpinner.classList.remove('hidden');
                 examBtnText.textContent = 'Generating...';
                 generateExamBtn.disabled = true;
-                logMessage('Generating exam questions...', 'info');
-                showSiriWaveInExam('AI is generating your exam...');
+                logMessage(`Generating ${currentExamType} exam questions...`, 'info');
+                showSiriWaveInExam(`AI is generating ${currentExamType} exam...`);
 
                 try {
-                    let prompt =
-                        `Create a comprehensive multiple-choice quiz (10-25 questions) based on the following document. Return as JSON array of objects with keys: question, options (array of 4), answer, explanation.`;
+                    let prompt = '';
                     let fileData = null;
+                    const textToSend = rawFileText.substring(0, 30000);
+
+                    if (currentExamType === 'objective') {
+                        prompt =
+                            `Create a comprehensive multiple-choice quiz (10-25 questions) based on the following document. Return as JSON array of objects with keys: question, options (array of 4), answer, explanation.`;
+                    } else {
+                        prompt =
+                            `You are an expert educator. Based on the following document, generate a comprehensive theory exam. The questions should test deep understanding and ability to explain concepts. Return a JSON array of objects. Each object must have:
+                            - "question": The theory question.
+                            - "expected_answer": A detailed model answer containing key points.
+                            Generate as many good questions as the document allows (aim for 5-15).`;
+                    }
+
                     if (uploadedFileData && !rawFileText) {
                         fileData = uploadedFileData;
                         prompt += ` The document is a PDF.`;
                     } else {
-                        prompt += `\nDocument text:\n${rawFileText.substring(0,25000)}`;
+                        prompt += `\nDocument text:\n${textToSend}`;
                     }
+
                     const result = await callGemini(prompt, fileData);
                     let cleaned = result.trim();
-                    if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/,
-                        '').trim();
-                    else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '')
-                        .trim();
+                    if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
+                    else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
                     examQuestions = JSON.parse(cleaned);
 
-                    // ─── FIX: Clear the Siri wave and show settings ───
-                    // Restore the intro with a success message
-                    examIntro.innerHTML = `
-                        <h3 class="text-xl font-bold text-white">✅ Exam Generated!</h3>
-                        <p class="text-sm text-emerald-400 max-w-md mx-auto">${examQuestions.length} questions ready. Configure settings below and start the exam.</p>
-                        <button id="generate-exam-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
-                            <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span id="exam-btn-text">Regenerate Exam</span>
-                        </button>
-                    `;
-                    // Re-bind the regenerate button
+                    if (!Array.isArray(examQuestions) || examQuestions.length === 0) {
+                        throw new Error('No questions generated.');
+                    }
+
+                    // ─── Clear Siri wave and show settings ───
+                    if (currentExamType === 'objective') {
+                        examIntro.innerHTML = `
+                            <h3 class="text-xl font-bold text-white">✅ Objective Exam Generated!</h3>
+                            <p class="text-sm text-emerald-400 max-w-md mx-auto">${examQuestions.length} MCQ questions ready. Configure settings below and start the exam.</p>
+                            <button id="generate-exam-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
+                                <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span id="exam-btn-text">Regenerate Exam</span>
+                            </button>
+                        `;
+                    } else {
+                        examIntro.innerHTML = `
+                            <h3 class="text-xl font-bold text-white">✅ Theory Exam Generated!</h3>
+                            <p class="text-sm text-emerald-400 max-w-md mx-auto">${examQuestions.length} theory questions ready. Configure settings below and start the exam.</p>
+                            <button id="generate-exam-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
+                                <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span id="exam-btn-text">Regenerate Exam</span>
+                            </button>
+                        `;
+                    }
+
                     const newBtn = examIntro.querySelector('#generate-exam-btn');
                     if (newBtn) {
                         newBtn.addEventListener('click', examGenerateListener);
                     }
-                    // Re-bind the spinner and text references
+                    // Re-bind spinner and text
                     window.examSpinner = document.getElementById('exam-spinner');
                     window.examBtnText = document.getElementById('exam-btn-text');
-                    // Update the global references
                     Object.assign(window, { examSpinner: document.getElementById('exam-spinner'), examBtnText: document
                             .getElementById('exam-btn-text') });
 
@@ -3031,28 +3345,20 @@
                     examSettings.classList.remove('hidden');
                     examActiveArea.classList.add('hidden');
                     resultsArea.classList.add('hidden');
+                    theoryResultsArea.classList.add('hidden');
                     timerDisplay.classList.add('hidden');
                     clearInterval(examTimer);
                     document.querySelector('input[name="exam-mode"][value="instant"]').checked = true;
                     timerSelect.value = '10';
-                    logMessage(`Exam generated with ${examQuestions.length} questions.`, 'success');
+                    logMessage(`Exam generated with ${examQuestions.length} ${currentExamType} questions.`, 'success');
+
                 } catch (err) {
                     showError('Exam generation error: ' + err.message);
                     logMessage('Exam error: ' + err.message, 'error');
-                    // Restore the intro
-                    examIntro.innerHTML = `
-                        <h3 class="text-xl font-bold text-white">AI Exam Generator</h3>
-                        <p class="text-sm text-slate-400 max-w-md mx-auto">Generate a complete multiple‑choice assessment from your document.</p>
-                        <button id="generate-exam-btn" class="btn-glow bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm flex items-center justify-center space-x-2 mx-auto hover:scale-105">
-                            <svg class="w-4 h-4 animate-spin hidden" id="exam-spinner" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span id="exam-btn-text">Generate Exam</span>
-                        </button>
-                    `;
-                    const retryBtn = examIntro.querySelector('#generate-exam-btn');
-                    if (retryBtn) retryBtn.addEventListener('click', examGenerateListener);
+                    // Restore the intro with type selector
+                    clearSiriWaveFromExam();
+                    // Re-select the chosen type
+                    document.querySelector(`input[name="exam-type-select"][value="${currentExamType}"]`).checked = true;
                 } finally {
                     examSpinner.classList.add('hidden');
                     examBtnText.textContent = 'Generate Exam';
@@ -3060,7 +3366,6 @@
                 }
             };
 
-            // Store the listener for potential re-binding
             generateExamBtn._listener = examGenerateListener;
             generateExamBtn.addEventListener('click', examGenerateListener);
 
@@ -3077,8 +3382,13 @@
                 examSettings.classList.add('hidden');
                 examActiveArea.classList.remove('hidden');
                 resultsArea.classList.add('hidden');
+                theoryResultsArea.classList.add('hidden');
 
-                if (examMode === 'instant') { renderInstantModeDiv(); } else { renderAfterModeRadios(); }
+                if (currentExamType === 'objective') {
+                    renderInstantModeDiv();
+                } else {
+                    renderTheoryModeDiv();
+                }
 
                 if (examTimeLimit > 0) {
                     examTimeLeft = examTimeLimit * 60;
@@ -3090,12 +3400,20 @@
                         if (examTimeLeft <= 0) {
                             clearInterval(examTimer);
                             timerDisplay.classList.add('hidden');
-                            if (!examSubmitted) { examSubmitted = true;
-                                submitExam(); }
+                            if (!examSubmitted) {
+                                examSubmitted = true;
+                                if (currentExamType === 'objective') {
+                                    submitExam();
+                                } else {
+                                    submitTheoryAnswers();
+                                }
+                            }
                         }
                     }, 1000);
-                } else { timerDisplay.classList.add('hidden'); }
-                logMessage(`Exam started. Mode: ${examMode}${examTimeLimit > 0 ? ', Timer: ' + examTimeLimit + ' min' : ''}`,
+                } else {
+                    timerDisplay.classList.add('hidden');
+                }
+                logMessage(`Exam started. Type: ${currentExamType}, Mode: ${examMode}${examTimeLimit > 0 ? ', Timer: ' + examTimeLimit + ' min' : ''}`,
                     'info');
             });
 
@@ -3136,6 +3454,10 @@
                     questionsContainer.appendChild(card);
                 });
                 submitExamBtn.classList.remove('hidden');
+                submitTheoryBtn.classList.add('hidden');
+                questionsContainer.classList.remove('hidden');
+                theoryContainer.classList.add('hidden');
+                totalQuestionsBadge.textContent = `${examQuestions.length} Questions`;
             }
 
             window.selectInstantOption = function(el, qIndex) {
@@ -3166,46 +3488,7 @@
                 userAnswers[qIndex] = selected;
             };
 
-            function renderAfterModeRadios() {
-                questionsContainer.innerHTML = '';
-                totalQuestionsBadge.textContent = `${examQuestions.length} Questions`;
-                examQuestions.forEach((q, qIndex) => {
-                    const card = document.createElement('div');
-                    card.className = 'exam-card glass rounded-xl p-5 space-y-3 animate-fade-up';
-                    card.id = `exam-q-${qIndex}`;
-                    let optsHtml = '';
-                    q.options.forEach((opt) => {
-                        const optId = opt.replace(/\s/g, '');
-                        optsHtml += `
-                            <label class="radio-label flex items-start space-x-3 p-3 rounded-lg border border-slate-700 bg-slate-900/50 transition-all duration-200 hover:bg-slate-800/50 cursor-pointer" 
-                                   id="exam-lbl-${qIndex}-${optId}" 
-                                   data-q="${qIndex}" data-opt="${opt}">
-                                <input type="radio" name="exam-q-${qIndex}" value="${opt}" class="mt-1 pointer-events-none" data-q="${qIndex}" data-opt="${opt}">
-                                <span class="text-sm text-slate-200">${opt}</span>
-                            </label>
-                        `;
-                    });
-                    card.innerHTML = `
-                        <p class="font-semibold text-white text-base">Q${qIndex+1}. ${q.question}</p>
-                        <div class="space-y-2 mt-2">${optsHtml}</div>
-                        <div id="exam-expl-${qIndex}" class="hidden text-xs mt-3 p-3 rounded-lg bg-indigo-950/60 border border-indigo-800 text-indigo-200">
-                            <span class="font-semibold">Explanation:</span> ${q.explanation}
-                        </div>
-                    `;
-                    card.querySelectorAll('.radio-label').forEach(label => {
-                        label.addEventListener('click', function(e) {
-                            const radio = this.querySelector('input[type="radio"]');
-                            if (!radio) return;
-                            radio.checked = true;
-                            const qIdx = parseInt(this.dataset.q);
-                            userAnswers[qIdx] = radio.value;
-                        });
-                    });
-                    questionsContainer.appendChild(card);
-                });
-                submitExamBtn.classList.remove('hidden');
-            }
-
+            // ─── Submit Objective Exam ───
             submitExamBtn.addEventListener('click', () => {
                 if (examSubmitted) return;
                 examSubmitted = true;
@@ -3248,12 +3531,17 @@
                 else scoreFeedback.textContent = 'Good effort. Review explanations to improve.';
                 resultsArea.classList.remove('hidden');
                 resultsArea.scrollIntoView({ behavior: 'smooth' });
-                logMessage(`Exam submitted. Score: ${score}/${examQuestions.length}`, score === examQuestions.length ?
-                    'success' : 'info');
+                logMessage(`Objective exam submitted. Score: ${score}/${examQuestions.length}`, score === examQuestions
+                    .length ? 'success' : 'info');
             }
 
+            // ─── Submit Theory Exam (Bound to button) ───
+            submitTheoryBtn.addEventListener('click', submitTheoryAnswers);
+
+            // ─── Retake Exam ───
             retakeBtn.addEventListener('click', () => {
                 resultsArea.classList.add('hidden');
+                theoryResultsArea.classList.add('hidden');
                 examActiveArea.classList.add('hidden');
                 examSettings.classList.remove('hidden');
                 userAnswers = {};
@@ -3451,4 +3739,4 @@
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
-                        </html>
+    </html>
