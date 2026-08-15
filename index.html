@@ -196,81 +196,231 @@
             margin-bottom: 0.25rem;
             border: 1px solid var(--border-color);
         }
+
+        /* ─── ✨ ENHANCED SIRI WAVE – RAINBOW + DYNAMIC ─── */
         .siri-wave {
             display: flex;
-            align-items: center;
+            align-items: flex-end;
             justify-content: center;
-            height: 80px;
-            gap: 8px;
+            height: 110px;
+            gap: 10px;
+            padding: 10px 0;
+            position: relative;
         }
+        /* glowing aura behind the wave */
+        .siri-wave::before {
+            content: '';
+            position: absolute;
+            inset: -50px -30px;
+            background: radial-gradient(ellipse at center,
+                    rgba(129, 140, 248, 0.20) 0%,
+                    rgba(192, 132, 252, 0.12) 30%,
+                    rgba(99, 102, 241, 0.05) 60%,
+                    transparent 80%);
+            border-radius: 50%;
+            animation: auraPulse 2.8s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        @keyframes auraPulse {
+            0% {
+                opacity: 0.4;
+                transform: scale(0.85);
+                filter: blur(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1.15);
+                filter: blur(4px);
+            }
+        }
+
         .siri-wave .bar {
             width: 8px;
-            height: 20px;
-            border-radius: 4px;
-            animation: wave 1.2s ease-in-out infinite alternate;
+            border-radius: 8px 8px 4px 4px;
+            animation: wave 1.6s ease-in-out infinite alternate;
             transform-origin: bottom;
-            background: linear-gradient(to top, #818cf8, #c084fc, #a78bfa);
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.6), 0 0 40px rgba(99, 102, 241, 0.3), 0 0 60px rgba(99, 102, 241, 0.15);
+            position: relative;
+            transition: height 0.2s ease;
+            will-change: height, transform, box-shadow;
         }
+        /* each bar gets a unique rainbow color + matching glow */
         .siri-wave .bar:nth-child(1) {
-            animation-delay: 0.0s;
-            height: 20px;
+            background: linear-gradient(to top, #ff4757, #ff6b81, #ff4757);
+            box-shadow: 0 0 30px rgba(255, 71, 87, 0.6), 0 0 60px rgba(255, 71, 87, 0.25), 0 0 90px rgba(255, 71, 87, 0.10);
+            animation-delay: 0.00s;
+            height: 18px;
         }
         .siri-wave .bar:nth-child(2) {
-            animation-delay: 0.1s;
-            height: 30px;
+            background: linear-gradient(to top, #ff6b35, #ff9f43, #ff6b35);
+            box-shadow: 0 0 30px rgba(255, 107, 53, 0.6), 0 0 60px rgba(255, 107, 53, 0.25), 0 0 90px rgba(255, 107, 53, 0.10);
+            animation-delay: 0.10s;
+            height: 28px;
         }
         .siri-wave .bar:nth-child(3) {
-            animation-delay: 0.2s;
-            height: 50px;
+            background: linear-gradient(to top, #feca57, #ffd93d, #feca57);
+            box-shadow: 0 0 30px rgba(254, 202, 87, 0.6), 0 0 60px rgba(254, 202, 87, 0.25), 0 0 90px rgba(254, 202, 87, 0.10);
+            animation-delay: 0.20s;
+            height: 44px;
         }
         .siri-wave .bar:nth-child(4) {
-            animation-delay: 0.3s;
-            height: 70px;
+            background: linear-gradient(to top, #2ed573, #7bed9f, #2ed573);
+            box-shadow: 0 0 30px rgba(46, 213, 115, 0.6), 0 0 60px rgba(46, 213, 115, 0.25), 0 0 90px rgba(46, 213, 115, 0.10);
+            animation-delay: 0.30s;
+            height: 62px;
         }
         .siri-wave .bar:nth-child(5) {
-            animation-delay: 0.4s;
+            background: linear-gradient(to top, #1e90ff, #54a0ff, #1e90ff);
+            box-shadow: 0 0 30px rgba(30, 144, 255, 0.6), 0 0 60px rgba(30, 144, 255, 0.25), 0 0 90px rgba(30, 144, 255, 0.10);
+            animation-delay: 0.40s;
             height: 80px;
         }
         .siri-wave .bar:nth-child(6) {
-            animation-delay: 0.5s;
-            height: 70px;
+            background: linear-gradient(to top, #5f27cd, #a29bfe, #5f27cd);
+            box-shadow: 0 0 30px rgba(95, 39, 205, 0.6), 0 0 60px rgba(95, 39, 205, 0.25), 0 0 90px rgba(95, 39, 205, 0.10);
+            animation-delay: 0.50s;
+            height: 90px;
         }
         .siri-wave .bar:nth-child(7) {
-            animation-delay: 0.6s;
-            height: 50px;
+            background: linear-gradient(to top, #6c5ce7, #a29bfe, #6c5ce7);
+            box-shadow: 0 0 30px rgba(108, 92, 231, 0.6), 0 0 60px rgba(108, 92, 231, 0.25), 0 0 90px rgba(108, 92, 231, 0.10);
+            animation-delay: 0.60s;
+            height: 72px;
         }
         .siri-wave .bar:nth-child(8) {
-            animation-delay: 0.7s;
-            height: 30px;
+            background: linear-gradient(to top, #fd79a8, #ff85a1, #fd79a8);
+            box-shadow: 0 0 30px rgba(253, 121, 168, 0.6), 0 0 60px rgba(253, 121, 168, 0.25), 0 0 90px rgba(253, 121, 168, 0.10);
+            animation-delay: 0.70s;
+            height: 50px;
         }
         .siri-wave .bar:nth-child(9) {
-            animation-delay: 0.8s;
-            height: 20px;
+            background: linear-gradient(to top, #ff4757, #ff6b81, #ff4757);
+            box-shadow: 0 0 30px rgba(255, 71, 87, 0.6), 0 0 60px rgba(255, 71, 87, 0.25), 0 0 90px rgba(255, 71, 87, 0.10);
+            animation-delay: 0.80s;
+            height: 26px;
         }
+
+        /* keyframes: each bar bounces with a different rhythm */
         @keyframes wave {
             0% {
-                transform: scaleY(0.3);
-                opacity: 0.5;
+                transform: scaleY(0.25);
+                opacity: 0.6;
+                filter: brightness(0.8) saturate(1.2);
+            }
+            30% {
+                transform: scaleY(0.70);
+                opacity: 0.9;
+                filter: brightness(1.1) saturate(1.5);
+            }
+            60% {
+                transform: scaleY(1.00);
+                opacity: 1;
+                filter: brightness(1.3) saturate(1.8);
+            }
+            85% {
+                transform: scaleY(0.55);
+                opacity: 0.85;
+                filter: brightness(0.9) saturate(1.3);
             }
             100% {
-                transform: scaleY(1);
-                opacity: 1;
+                transform: scaleY(0.15);
+                opacity: 0.5;
+                filter: brightness(0.7) saturate(1.0);
             }
         }
+
+        /* sparkle particles floating around */
+        .siri-wave .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: white;
+            pointer-events: none;
+            animation: sparkleFloat 2.4s ease-in-out infinite alternate;
+            opacity: 0;
+            filter: blur(1px);
+        }
+        .siri-wave .sparkle:nth-child(10) {
+            top: 10%;
+            left: 8%;
+            animation-delay: 0.1s;
+            background: #ff6b81;
+            box-shadow: 0 0 12px #ff6b81;
+        }
+        .siri-wave .sparkle:nth-child(11) {
+            top: 15%;
+            right: 10%;
+            animation-delay: 0.6s;
+            background: #feca57;
+            box-shadow: 0 0 12px #feca57;
+        }
+        .siri-wave .sparkle:nth-child(12) {
+            bottom: 20%;
+            left: 5%;
+            animation-delay: 1.1s;
+            background: #54a0ff;
+            box-shadow: 0 0 12px #54a0ff;
+        }
+        .siri-wave .sparkle:nth-child(13) {
+            bottom: 25%;
+            right: 6%;
+            animation-delay: 1.6s;
+            background: #a29bfe;
+            box-shadow: 0 0 12px #a29bfe;
+        }
+        .siri-wave .sparkle:nth-child(14) {
+            top: 40%;
+            left: 2%;
+            animation-delay: 0.3s;
+            background: #7bed9f;
+            box-shadow: 0 0 12px #7bed9f;
+        }
+        .siri-wave .sparkle:nth-child(15) {
+            top: 35%;
+            right: 3%;
+            animation-delay: 0.9s;
+            background: #ff9f43;
+            box-shadow: 0 0 12px #ff9f43;
+        }
+        @keyframes sparkleFloat {
+            0% {
+                transform: translate(0, 0) scale(0.5);
+                opacity: 0;
+            }
+            30% {
+                opacity: 0.9;
+                transform: translate(10px, -20px) scale(1.2);
+            }
+            70% {
+                opacity: 0.7;
+                transform: translate(-6px, -40px) scale(0.8);
+            }
+            100% {
+                transform: translate(14px, -60px) scale(0.3);
+                opacity: 0;
+            }
+        }
+
+        /* ─── Loading overlay with enhanced wave ─── */
         .loading-overlay {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 200px;
-            gap: 20px;
+            gap: 24px;
         }
         .loading-text {
             font-size: 1.1rem;
             color: var(--text-secondary);
             animation: pulse-text 1.5s ease-in-out infinite;
             font-weight: 500;
+            letter-spacing: 0.02em;
+            background: linear-gradient(135deg, #818cf8, #c084fc, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% 200%;
+            animation: shimmer 2.8s ease-in-out infinite, pulse-text 1.8s ease-in-out infinite;
         }
         @keyframes pulse-text {
             0%,
@@ -281,6 +431,7 @@
                 opacity: 1;
             }
         }
+
         .pdf-viewer {
             width: 100%;
             height: 600px;
@@ -908,6 +1059,44 @@
                 max-width: 80px;
                 max-height: 80px;
             }
+            .siri-wave {
+                height: 70px;
+                gap: 6px;
+            }
+            .siri-wave .bar {
+                width: 5px;
+                border-radius: 5px 5px 3px 3px;
+            }
+            .siri-wave .bar:nth-child(5) {
+                height: 50px;
+            }
+            .siri-wave .bar:nth-child(6) {
+                height: 58px;
+            }
+            .siri-wave .bar:nth-child(7) {
+                height: 44px;
+            }
+            .siri-wave .bar:nth-child(4) {
+                height: 38px;
+            }
+            .siri-wave .bar:nth-child(3) {
+                height: 28px;
+            }
+            .siri-wave .bar:nth-child(8) {
+                height: 30px;
+            }
+            .siri-wave .bar:nth-child(2) {
+                height: 18px;
+            }
+            .siri-wave .bar:nth-child(9) {
+                height: 16px;
+            }
+            .siri-wave .bar:nth-child(1) {
+                height: 12px;
+            }
+            .siri-wave .sparkle {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -1233,7 +1422,7 @@
 
     <script>
         // ════════════════════════════════════════════════════════════════
-        // Pungystudio AI – v7.6 Pro – Fixed Exam Flow with Theory & Image Upload
+        // Pungystudio AI – v7.6 Pro – Enhanced Siri Wave (Rainbow + Dynamic)
         // ════════════════════════════════════════════════════════════════
 
         const JSON_BIN_ID = '6a7a4f06da38895dfed2f54d';
@@ -1366,8 +1555,8 @@
         let currentUser = null;
         let hasFullText = false;
         let lastExamIntroHTML = '';
-        let currentExamType = 'objective'; // 'objective' or 'theory'
-        let theoryImages = {}; // store base64 images per question index
+        let currentExamType = 'objective';
+        let theoryImages = {};
 
         // ─── Activity Log ───
         function logMessage(message, type = 'info') {
@@ -2091,64 +2280,54 @@
         }
 
         // ════════════════════════════════════════════════════════════════
-        // ─── SIRI WAVE HELPERS ───
+        // ─── SIRI WAVE HELPERS (enhanced with rainbow + sparkles) ───
         // ════════════════════════════════════════════════════════════════
 
-        function showSiriWaveInViewer(message = 'AI is processing your document...') {
-            viewerContent.innerHTML = `
+        function buildSiriWaveHTML(message = 'AI is processing your document...') {
+            return `
                 <div class="loading-overlay">
                     <div class="siri-wave">
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <!-- Sparkle particles -->
+                        <div class="sparkle"></div>
+                        <div class="sparkle"></div>
+                        <div class="sparkle"></div>
+                        <div class="sparkle"></div>
+                        <div class="sparkle"></div>
+                        <div class="sparkle"></div>
                     </div>
                     <div class="loading-text">${message}</div>
                 </div>
             `;
         }
 
+        function showSiriWaveInViewer(message = 'AI is processing your document...') {
+            viewerContent.innerHTML = buildSiriWaveHTML(message);
+        }
+
         function showSiriWaveInSummary(message = 'AI is generating your summary...') {
-            summaryContent.innerHTML = `
-                <div class="loading-overlay">
-                    <div class="siri-wave">
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                    </div>
-                    <div class="loading-text">${message}</div>
-                </div>
-            `;
+            summaryContent.innerHTML = buildSiriWaveHTML(message);
             summaryIntro.classList.add('hidden');
             summaryActiveArea.classList.remove('hidden');
         }
 
         function showSiriWaveInKeyConcepts(message = 'AI is extracting key concepts...') {
-            keyconceptsContent.innerHTML = `
-                <div class="loading-overlay">
-                    <div class="siri-wave">
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                    </div>
-                    <div class="loading-text">${message}</div>
-                </div>
-            `;
+            keyconceptsContent.innerHTML = buildSiriWaveHTML(message);
             keyconceptsIntro.classList.add('hidden');
             keyconceptsActive.classList.remove('hidden');
         }
 
         function showSiriWaveInExam(message = 'AI is generating your exam...') {
             lastExamIntroHTML = examIntro.innerHTML;
-            examIntro.innerHTML = `
-                <div class="loading-overlay">
-                    <div class="siri-wave">
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                    </div>
-                    <div class="loading-text">${message}</div>
-                </div>
-            `;
+            examIntro.innerHTML = buildSiriWaveHTML(message);
             examIntro.classList.remove('hidden');
             examSettings.classList.add('hidden');
             examActiveArea.classList.add('hidden');
@@ -2157,7 +2336,6 @@
         }
 
         function clearSiriWaveFromExam() {
-            // Restore the intro with the type selector
             examIntro.innerHTML = `
                 <h3 class="text-xl font-bold text-white">AI Exam Generator</h3>
                 <p class="text-sm text-slate-400 max-w-md mx-auto">Choose exam type and generate questions from your document.</p>
@@ -2173,12 +2351,10 @@
                     <span id="exam-btn-text">Generate Exam</span>
                 </button>
             `;
-            // Re-bind the generate button
             const newBtn = document.getElementById('generate-exam-btn');
             if (newBtn) {
                 newBtn.addEventListener('click', generateExamBtn._listener || (() => {}));
             }
-            // Re-bind spinner and text
             window.examSpinner = document.getElementById('exam-spinner');
             window.examBtnText = document.getElementById('exam-btn-text');
             Object.assign(window, { examSpinner: document.getElementById('exam-spinner'), examBtnText: document
@@ -2257,7 +2433,6 @@
                 tabExam.className =
                     'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
                 examPane.classList.remove('hidden');
-                // Smart restore of exam state
                 if (examQuestions.length > 0) {
                     if (!examSettings.classList.contains('hidden') || examActiveArea.classList.contains('hidden')) {
                         if (examQuestions.length > 0 && currentExamType === 'objective' && questionsContainer
@@ -2285,7 +2460,6 @@
                             submitTheoryBtn.classList.remove('hidden');
                             totalQuestionsBadge.textContent = `${examQuestions.length} Theory Questions`;
                         } else {
-                            // Fallback: show settings
                             examIntro.classList.add('hidden');
                             examSettings.classList.remove('hidden');
                             examActiveArea.classList.add('hidden');
@@ -2393,7 +2567,6 @@
                     workspaceSection.classList.remove('hidden');
                     uploadSection.classList.add('hidden');
 
-                    // ─── EXTRACT FULL TEXT FROM AI-IFY ───
                     if (data.aiify) {
                         const tempDiv = document.createElement('div');
                         tempDiv.innerHTML = data.aiify;
@@ -2415,7 +2588,6 @@
                         logMessage(`ℹ️ No AI-ify content in this project. Full text not available.`, 'info');
                     }
 
-                    // ─── Restore AI-ify ───
                     if (data.aiify) {
                         window.switchTab('viewer');
                         viewerContent.innerHTML = `
@@ -2440,7 +2612,6 @@
                         `;
                     }
 
-                    // ─── Restore Summary ───
                     if (data.summary) {
                         window.switchTab('summary');
                         summaryIntro.classList.add('hidden');
@@ -2451,7 +2622,6 @@
                         `;
                     }
 
-                    // ─── Restore Key Concepts ───
                     if (data.keyconcepts) {
                         window.switchTab('keyconcepts');
                         keyconceptsIntro.classList.add('hidden');
@@ -2462,7 +2632,6 @@
                         `;
                     }
 
-                    // ─── Restore Merge ───
                     if (data.merge) {
                         mergeResult.classList.remove('hidden');
                         mergePreview.innerHTML = `
@@ -2553,7 +2722,6 @@
                 `;
                 theoryContainer.appendChild(card);
 
-                // Bind image upload
                 const fileInput = card.querySelector('.theory-image-input');
                 const previewDiv = document.getElementById(`theory-image-preview-${qIndex}`);
                 fileInput.addEventListener('change', function(e) {
@@ -2567,7 +2735,6 @@
                             <img src="${base64}" class="image-upload-preview" />
                             <button class="text-xs text-red-400 hover:text-red-300 remove-image-btn" data-q="${qIndex}">✕</button>
                         `;
-                        // Bind remove
                         previewDiv.querySelector('.remove-image-btn').addEventListener('click', function() {
                             delete theoryImages[qIndex];
                             previewDiv.innerHTML = '';
@@ -2587,7 +2754,6 @@
             if (examSubmitted) return;
             examSubmitted = true;
 
-            // Gather answers and images
             let answers = [];
             let allAnswered = true;
             examQuestions.forEach((q, idx) => {
@@ -2608,12 +2774,12 @@
                 }
             }
 
-            // Show Siri wave
             showSiriWaveInExam('AI is evaluating your answers...');
             submitTheoryBtn.disabled = true;
 
             try {
-                let prompt = `You are a strict but fair professor. Evaluate the student's answer against the expected answer. Provide a score (integer out of 10), and specific feedback explaining what was good and what was missing. Be objective and grade based on the key points in the expected answer. If an image is provided, consider the content of the image as part of the answer (e.g., math equations, diagrams, handwriting).\n\n`;
+                let prompt =
+                    `You are a strict but fair professor. Evaluate the student's answer against the expected answer. Provide a score (integer out of 10), and specific feedback explaining what was good and what was missing. Be objective and grade based on the key points in the expected answer. If an image is provided, consider the content of the image as part of the answer (e.g., math equations, diagrams, handwriting).\n\n`;
                 answers.forEach((item, i) => {
                     prompt += `Question ${i+1}: ${item.question}\nExpected Answer: ${item.expected}\nStudent Answer: ${item.user_answer}\n`;
                     if (item.image) prompt += `Student attached an image (base64 data).\n`;
@@ -2621,15 +2787,10 @@
                 });
                 prompt += `Return a JSON array of objects with keys: "score" (integer), "feedback" (string), "correct" (boolean). ONLY valid JSON.`;
 
-                // Prepare file data for image(s) if any
-                let fileData = null;
-                // We'll send the prompt as text and include images if any
-                // For simplicity, we'll send images as inlineData in the parts array
                 let parts = [{ text: prompt }];
                 let hasImage = false;
                 answers.forEach((item, idx) => {
                     if (item.image) {
-                        // Extract mime type and base64 data
                         const mime = item.image.split(';')[0].split(':')[1];
                         const data = item.image.split(',')[1];
                         parts.push({
@@ -2642,10 +2803,8 @@
                     }
                 });
 
-                // Call Gemini with multi-part if images exist
                 let response;
                 if (hasImage) {
-                    // Need to call with parts directly
                     const keyObj = getNextActiveKey();
                     if (!keyObj) throw new Error('No active key.');
                     const apiKey = keyObj.key;
@@ -2664,7 +2823,6 @@
                     if (!text) throw new Error('No content returned.');
                     response = text;
                 } else {
-                    // Use regular call
                     response = await callGemini(prompt, null);
                 }
 
@@ -2677,7 +2835,6 @@
                     throw new Error('Invalid response format from AI.');
                 }
 
-                // Clear Siri wave and show results
                 examIntro.innerHTML = `
                     <h3 class="text-xl font-bold text-white">📝 Theory Exam Results</h3>
                     <p class="text-sm text-slate-400">AI has evaluated your written answers.</p>
@@ -2733,9 +2890,7 @@
                 logMessage('Theory evaluation error: ' + err.message, 'error');
                 examSubmitted = false;
                 submitTheoryBtn.disabled = false;
-                // Restore the theory view
                 clearSiriWaveFromExam();
-                // Re-show settings with theory type pre-selected
                 document.querySelector('input[name="exam-type-select"][value="theory"]').checked = true;
                 examIntro.classList.remove('hidden');
                 examSettings.classList.remove('hidden');
@@ -2810,7 +2965,6 @@
                 }
             }
 
-            // ─── Setup Tab Click Listeners ───
             tabViewer.addEventListener('click', () => window.switchTab('viewer'));
             tabSummary.addEventListener('click', () => window.switchTab('summary'));
             tabExam.addEventListener('click', () => window.switchTab('exam'));
@@ -2864,8 +3018,7 @@
                 userAnswers = {};
                 summaryIntro.classList.remove('hidden');
                 summaryActiveArea.classList.add('hidden');
-                // Reset exam UI
-                clearSiriWaveFromExam(); // this will restore the intro with type selector
+                clearSiriWaveFromExam();
                 examSettings.classList.add('hidden');
                 examActiveArea.classList.add('hidden');
                 resultsArea.classList.add('hidden');
@@ -2881,7 +3034,6 @@
                 currentFilename = null;
                 updateProjectDisplay(null);
                 hasFullText = false;
-                // Reset exam state
                 examQuestions = [];
                 examSubmitted = false;
                 userAnswers = {};
@@ -2911,7 +3063,6 @@
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
 
-            // ─── Handle File Upload ───
             function handleFile(file) {
                 hideError();
                 if (!file) return;
@@ -3249,7 +3400,7 @@
             generateKeyConceptsBtn.addEventListener('click', runKeyConceptsGeneration);
             regenKeyConceptsBtn.addEventListener('click', runKeyConceptsGeneration);
 
-            // ─── FIXED: Exam Generator (with type selection in intro) ───
+            // ─── Exam Generator ───
             let examGenerateListener = async function() {
                 hideError();
                 if (!isVerified) { showError('Verification required.'); return; }
@@ -3261,7 +3412,6 @@
                     return;
                 }
 
-                // Get selected exam type from intro
                 const typeRadio = document.querySelector('input[name="exam-type-select"]:checked');
                 currentExamType = typeRadio ? typeRadio.value : 'objective';
 
@@ -3304,7 +3454,6 @@
                         throw new Error('No questions generated.');
                     }
 
-                    // ─── Clear Siri wave and show settings ───
                     if (currentExamType === 'objective') {
                         examIntro.innerHTML = `
                             <h3 class="text-xl font-bold text-white">✅ Objective Exam Generated!</h3>
@@ -3335,7 +3484,6 @@
                     if (newBtn) {
                         newBtn.addEventListener('click', examGenerateListener);
                     }
-                    // Re-bind spinner and text
                     window.examSpinner = document.getElementById('exam-spinner');
                     window.examBtnText = document.getElementById('exam-btn-text');
                     Object.assign(window, { examSpinner: document.getElementById('exam-spinner'), examBtnText: document
@@ -3355,9 +3503,7 @@
                 } catch (err) {
                     showError('Exam generation error: ' + err.message);
                     logMessage('Exam error: ' + err.message, 'error');
-                    // Restore the intro with type selector
                     clearSiriWaveFromExam();
-                    // Re-select the chosen type
                     document.querySelector(`input[name="exam-type-select"][value="${currentExamType}"]`).checked = true;
                 } finally {
                     examSpinner.classList.add('hidden');
@@ -3535,7 +3681,7 @@
                     .length ? 'success' : 'info');
             }
 
-            // ─── Submit Theory Exam (Bound to button) ───
+            // ─── Submit Theory Exam ───
             submitTheoryBtn.addEventListener('click', submitTheoryAnswers);
 
             // ─── Retake Exam ───
@@ -3638,16 +3784,7 @@
                     openLoginModal(); return; }
                 mergeProgress.classList.remove('hidden');
                 mergeResult.classList.add('hidden');
-                mergeProgress.innerHTML = `
-                    <div class="loading-overlay">
-                        <div class="siri-wave">
-                            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                        </div>
-                        <div class="loading-text">Pungystudio AI is synthesizing your documents...</div>
-                    </div>
-                `;
+                mergeProgress.innerHTML = buildSiriWaveHTML('Pungystudio AI is synthesizing your documents...');
                 mergeSynthesizeBtn.disabled = true;
                 logMessage('Starting AI synthesis...', 'info');
                 try {
