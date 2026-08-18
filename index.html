@@ -10,6 +10,8 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/docx@8.0.0/build/index.min.js">
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-text/9.0.5/html-to-text.js">
+    </script>
     <style>
         /* ─── Theme ─── */
         :root {
@@ -196,8 +198,16 @@
             margin-bottom: 0.25rem;
             border: 1px solid var(--border-color);
         }
+        .merge-file-item .file-badge {
+            font-size: 0.6rem;
+            background: var(--bg-primary);
+            padding: 0.1rem 0.5rem;
+            border-radius: 999px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
 
-        /* ─── ✨ ENHANCED SIRI WAVE – RAINBOW + DYNAMIC ─── */
+        /* ─── Enhanced Siri Wave ─── */
         .siri-wave {
             display: flex;
             align-items: flex-end;
@@ -207,7 +217,6 @@
             padding: 10px 0;
             position: relative;
         }
-        /* glowing aura behind the wave */
         .siri-wave::before {
             content: '';
             position: absolute;
@@ -240,10 +249,8 @@
             animation: wave 1.6s ease-in-out infinite alternate;
             transform-origin: bottom;
             position: relative;
-            transition: height 0.2s ease;
             will-change: height, transform, box-shadow;
         }
-        /* each bar gets a unique rainbow color + matching glow */
         .siri-wave .bar:nth-child(1) {
             background: linear-gradient(to top, #ff4757, #ff6b81, #ff4757);
             box-shadow: 0 0 30px rgba(255, 71, 87, 0.6), 0 0 60px rgba(255, 71, 87, 0.25), 0 0 90px rgba(255, 71, 87, 0.10);
@@ -299,7 +306,6 @@
             height: 26px;
         }
 
-        /* keyframes: each bar bounces with a different rhythm */
         @keyframes wave {
             0% {
                 transform: scaleY(0.25);
@@ -328,7 +334,6 @@
             }
         }
 
-        /* sparkle particles floating around */
         .siri-wave .sparkle {
             position: absolute;
             width: 4px;
@@ -401,7 +406,6 @@
             }
         }
 
-        /* ─── Loading overlay with enhanced wave ─── */
         .loading-overlay {
             display: flex;
             flex-direction: column;
@@ -413,7 +417,6 @@
         .loading-text {
             font-size: 1.1rem;
             color: var(--text-secondary);
-            animation: pulse-text 1.5s ease-in-out infinite;
             font-weight: 500;
             letter-spacing: 0.02em;
             background: linear-gradient(135deg, #818cf8, #c084fc, #a78bfa);
@@ -482,6 +485,11 @@
             border: 1px solid var(--border-color);
             max-height: 400px;
             overflow-y: auto;
+        }
+        .merge-preview img {
+            max-width: 100%;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
         }
         .radio-label {
             cursor: pointer;
@@ -992,6 +1000,58 @@
             margin-top: 4px;
         }
 
+        /* ─── AI Solver Styles ─── */
+        .solver-input-area {
+            min-height: 80px;
+            resize: vertical;
+        }
+        .solver-response {
+            line-height: 1.8;
+        }
+        .solver-response .math-block {
+            background: var(--bg-primary);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            margin: 0.5rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            overflow-x: auto;
+        }
+        .solver-response .step {
+            padding: 0.5rem 0.75rem;
+            border-left: 3px solid #818cf8;
+            margin: 0.5rem 0;
+            background: var(--bg-secondary);
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+        .solver-response .step .step-label {
+            font-weight: 600;
+            color: #818cf8;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .solver-response .final-answer {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+            margin: 0.75rem 0;
+        }
+        .solver-response .final-answer .answer-label {
+            font-weight: 700;
+            color: #34d399;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .solver-response .final-answer .answer-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
         @media (max-width: 640px) {
             .admin-modal .modal-box {
                 padding: 1.25rem;
@@ -1097,6 +1157,9 @@
             .siri-wave .sparkle {
                 display: none;
             }
+            .solver-input-area {
+                min-height: 60px;
+            }
         }
     </style>
 </head>
@@ -1109,9 +1172,7 @@
     <div id="admin-modal" class="admin-modal">
         <div class="modal-box">
             <button class="close-btn" id="admin-modal-close">&times;</button>
-            <div id="admin-panel-content">
-                <!-- filled by JS -->
-            </div>
+            <div id="admin-panel-content"></div>
         </div>
     </div>
 
@@ -1119,9 +1180,7 @@
     <div id="login-modal" class="login-modal">
         <div class="modal-box">
             <button class="close-btn" id="login-modal-close">&times;</button>
-            <div id="login-panel-content">
-                <!-- filled by JS -->
-            </div>
+            <div id="login-panel-content"></div>
         </div>
     </div>
 
@@ -1134,7 +1193,7 @@
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-2">
                         <span class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[0.6rem] font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider shadow-lg">Pungystudio</span>
-                        <span class="text-[0.55rem] text-slate-500 font-mono bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700">v7.6 Pro</span>
+                        <span class="text-[0.55rem] text-slate-500 font-mono bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700">v8.1 Pro</span>
                     </div>
                     <h1 class="text-lg md:text-xl font-bold text-white hidden sm:block">Document &amp; AI Study Suite</h1>
                 </div>
@@ -1235,8 +1294,8 @@
                         <button id="merge-synthesize-btn" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium px-4 py-1.5 rounded-lg text-xs transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>AI Synthesize</button>
                     </div>
                     <div id="merge-zone" class="border-2 border-dashed border-slate-600 rounded-xl p-6 text-center cursor-pointer transition-all duration-300 bg-slate-900/20 hover:border-indigo-500">
-                        <p class="text-xs text-slate-400">Drop multiple files (.txt, .md, .docx, .pdf) – AI will merge them intelligently</p>
-                        <input type="file" id="merge-file-input" class="hidden" accept=".docx,.txt,.md,.pdf" multiple />
+                        <p class="text-xs text-slate-400">Drop multiple files (.txt, .md, .docx, .pdf, .jpg, .png, .gif, .webp) – AI will merge them intelligently</p>
+                        <input type="file" id="merge-file-input" class="hidden" accept=".docx,.txt,.md,.pdf,.jpg,.jpeg,.png,.gif,.webp,.svg" multiple />
                     </div>
                     <div id="merge-file-list" class="mt-3 space-y-1 max-h-32 overflow-y-auto"></div>
                     <div id="merge-progress" class="hidden mt-3"></div>
@@ -1265,6 +1324,7 @@
                             <button id="tab-summary" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200">AI Summary</button>
                             <button id="tab-exam" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200">AI Exam</button>
                             <button id="tab-keyconcepts" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200">Key Concepts</button>
+                            <button id="tab-solver" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200">🧠 AI Solver</button>
                             <button id="change-file-btn" class="px-3 py-2 text-xs text-red-400 hover:bg-red-950/30 rounded-lg transition-colors">Close</button>
                         </div>
                     </div>
@@ -1311,7 +1371,6 @@
                         <div id="exam-intro" class="text-center py-12 space-y-4 animate-fade-up">
                             <h3 class="text-xl font-bold text-white">AI Exam Generator</h3>
                             <p class="text-sm text-slate-400 max-w-md mx-auto">Choose exam type and generate questions from your document.</p>
-                            <!-- Exam Type Selection -->
                             <div class="flex flex-wrap justify-center gap-6 mt-4">
                                 <label class="block text-sm text-slate-200"><input type="radio" name="exam-type-select" value="objective" checked class="mr-2 accent-indigo-500"> Objective (MCQ)</label>
                                 <label class="block text-sm text-slate-200"><input type="radio" name="exam-type-select" value="theory" class="mr-2 accent-indigo-500"> Theory (Written)</label>
@@ -1353,9 +1412,7 @@
                                     <span id="timer-display" class="text-xs bg-red-950/60 text-red-300 border border-red-800 px-2.5 py-1 rounded-full font-mono hidden">⏱️ <span id="timer-count">00:00</span></span>
                                 </div>
                             </div>
-                            <!-- Objective Questions Container -->
                             <div id="questions-container" class="space-y-6"></div>
-                            <!-- Theory Questions Container -->
                             <div id="theory-container" class="space-y-6 hidden"></div>
                             <div class="flex flex-wrap justify-end gap-3 pt-4 border-t border-slate-800">
                                 <button id="submit-exam-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm hover:scale-105">Submit Answers</button>
@@ -1368,7 +1425,6 @@
                             <p id="score-feedback" class="text-sm text-slate-300"></p>
                             <button id="retake-btn" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg transition-all duration-200">Retake Exam</button>
                         </div>
-                        <!-- Theory Results Area -->
                         <div id="theory-results-area" class="hidden mt-6 space-y-4 animate-fade-up"></div>
                     </div>
 
@@ -1391,6 +1447,46 @@
                                 <button id="regen-keyconcepts-btn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition-all duration-200">Regenerate</button>
                             </div>
                             <div id="keyconcepts-content" class="text-slate-200 space-y-4 max-h-[550px] overflow-y-auto pr-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- ─── AI SOLVER PANE ─── -->
+                    <div id="solver-pane" class="hidden glass rounded-2xl border border-slate-700/50 p-6 min-h-[450px]">
+                        <div id="solver-intro" class="text-center py-4 space-y-2 animate-fade-up">
+                            <h3 class="text-xl font-bold text-white">🧠 AI Solver</h3>
+                            <p class="text-sm text-slate-400 max-w-lg mx-auto">Automatically detects and solves questions from your document. If it finds an assignment, test, or exam, it will provide step‑by‑step solutions.</p>
+                        </div>
+
+                        <div id="solver-active-area" class="space-y-4">
+                            <!-- Optional: user can ask a specific question -->
+                            <div>
+                                <label class="text-sm font-medium text-slate-300 block mb-1.5">Ask a specific question (optional)</label>
+                                <textarea id="solver-question" rows="2" class="solver-input-area w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-500" placeholder="e.g., Solve the equation from page 2, or explain the main theory..."></textarea>
+                            </div>
+
+                            <!-- Buttons -->
+                            <div class="flex flex-wrap items-center gap-4 pt-2">
+                                <button id="solver-auto-btn" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm hover:scale-105 flex items-center gap-2">
+                                    <svg class="w-4 h-4 animate-spin hidden" id="solver-spinner" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span id="solver-btn-text">🔍 Auto‑Detect & Solve</span>
+                                </button>
+                                <button id="solver-ask-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm hover:scale-105 flex items-center gap-2">
+                                    <span>❓ Ask Question</span>
+                                </button>
+                                <button id="solver-clear-btn" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Clear</button>
+                            </div>
+
+                            <!-- Response Area -->
+                            <div id="solver-response-container" class="hidden mt-4 animate-fade-up">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+                                    <h4 class="text-sm font-semibold text-white">✨ Solution</h4>
+                                    <button id="solver-copy-btn" class="text-xs text-slate-400 hover:text-white transition-colors">📋 Copy</button>
+                                </div>
+                                <div id="solver-response" class="solver-response text-slate-200 space-y-3 max-h-[500px] overflow-y-auto pr-2"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1422,7 +1518,7 @@
 
     <script>
         // ════════════════════════════════════════════════════════════════
-        // Pungystudio AI – v7.6 Pro – Enhanced Siri Wave (Rainbow + Dynamic)
+        // Pungystudio AI – v8.1 Pro – AI Solver (Document-aware, auto-detect)
         // ════════════════════════════════════════════════════════════════
 
         const JSON_BIN_ID = '6a7a4f06da38895dfed2f54d';
@@ -1466,11 +1562,15 @@
         const changeFileBtn = $('change-file-btn'),
             tabViewer = $('tab-viewer'),
             tabSummary = $('tab-summary'),
-            tabExam = $('tab-exam');
+            tabExam = $('tab-exam'),
+            tabKeyConcepts = $('tab-keyconcepts'),
+            tabSolver = $('tab-solver');
         const viewerPane = $('viewer-pane'),
             summaryPane = $('summary-pane'),
             examPane = $('exam-pane'),
-            aiIfyBtn = $('ai-ify-btn');
+            keyconceptsPane = $('keyconcepts-pane'),
+            solverPane = $('solver-pane');
+        const aiIfyBtn = $('ai-ify-btn');
         const aiSpinner = $('ai-spinner'),
             aiBtnText = $('ai-btn-text'),
             viewerContent = $('viewer-content');
@@ -1502,8 +1602,6 @@
             timerCount = $('timer-count');
         const activityLog = $('activity-log'),
             clearLogBtn = $('clear-log-btn');
-        const tabKeyConcepts = $('tab-keyconcepts'),
-            keyconceptsPane = $('keyconcepts-pane');
         const generateKeyConceptsBtn = $('generate-keyconcepts-btn'),
             keyconceptsSpinner = $('keyconcepts-spinner');
         const keyconceptsBtnText = $('keyconcepts-btn-text'),
@@ -1528,6 +1626,19 @@
             userBadge = $('user-badge'),
             currentUsername = $('current-username');
         const theoryResultsArea = $('theory-results-area');
+
+        // ─── Solver DOM refs ───
+        const solverQuestion = $('solver-question');
+        const solverAutoBtn = $('solver-auto-btn');
+        const solverAskBtn = $('solver-ask-btn');
+        const solverSpinner = $('solver-spinner');
+        const solverBtnText = $('solver-btn-text');
+        const solverResponseContainer = $('solver-response-container');
+        const solverResponse = $('solver-response');
+        const solverClearBtn = $('solver-clear-btn');
+        const solverCopyBtn = $('solver-copy-btn');
+        const solverIntro = $('solver-intro');
+        const solverActiveArea = $('solver-active-area');
 
         // ─── Global state ───
         let isVerified = false,
@@ -1557,6 +1668,8 @@
         let lastExamIntroHTML = '';
         let currentExamType = 'objective';
         let theoryImages = {};
+        let currentProject = null;
+        let currentFilename = null;
 
         // ─── Activity Log ───
         function logMessage(message, type = 'info') {
@@ -1932,7 +2045,15 @@
         async function callGeminiDirect(apiKey, prompt, fileData = null) {
             if (!isValidApiKey(apiKey)) throw new Error('Invalid API key format. Must start with "AIza" or "AQ."');
             let parts = [{ text: prompt }];
-            if (fileData) parts.push({ inlineData: { mimeType: fileData.mimeType, data: fileData.base64 } });
+            if (fileData) {
+                if (fileData.base64) {
+                    parts.push({ inlineData: { mimeType: fileData.mimeType || 'application/octet-stream',
+                            data: fileData.base64 } });
+                } else if (fileData.data) {
+                    parts.push({ inlineData: { mimeType: fileData.mimeType || 'application/octet-stream',
+                            data: fileData.data } });
+                }
+            }
             const response = await fetch(
                 `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
@@ -2206,7 +2327,7 @@
             const answered = document.querySelectorAll('#quiz-container .quiz-card[data-answered="true"]').length;
             if (answered < 5) {
                 verificationResult.textContent =
-                `⚠️ Please answer at least 5 questions before submitting. (${answered}/${total} answered)`;
+                    `⚠️ Please answer at least 5 questions before submitting. (${answered}/${total} answered)`;
                 verificationResult.className = 'text-amber-400 text-sm font-semibold text-center';
                 return;
             }
@@ -2220,7 +2341,7 @@
             if (passed) {
                 quizLocked = true;
                 verificationResult.textContent =
-                `🎉 You got ${correct} out of ${answered} answered (need 5). Verification passed!`;
+                    `🎉 You got ${correct} out of ${answered} answered (need 5). Verification passed!`;
                 verificationResult.className = 'text-emerald-400 text-sm font-semibold text-center';
                 localStorage.setItem('pungystudio_verified', 'true');
                 logMessage('Verification passed!', 'success');
@@ -2279,10 +2400,7 @@
             }
         }
 
-        // ════════════════════════════════════════════════════════════════
-        // ─── SIRI WAVE HELPERS (enhanced with rainbow + sparkles) ───
-        // ════════════════════════════════════════════════════════════════
-
+        // ─── SIRI WAVE HELPERS ───
         function buildSiriWaveHTML(message = 'AI is processing your document...') {
             return `
                 <div class="loading-overlay">
@@ -2296,7 +2414,6 @@
                         <div class="bar"></div>
                         <div class="bar"></div>
                         <div class="bar"></div>
-                        <!-- Sparkle particles -->
                         <div class="sparkle"></div>
                         <div class="sparkle"></div>
                         <div class="sparkle"></div>
@@ -2359,7 +2476,6 @@
             window.examBtnText = document.getElementById('exam-btn-text');
             Object.assign(window, { examSpinner: document.getElementById('exam-spinner'), examBtnText: document
                     .getElementById('exam-btn-text') });
-
             examIntro.classList.remove('hidden');
             examSettings.classList.add('hidden');
             examActiveArea.classList.add('hidden');
@@ -2369,7 +2485,6 @@
             timerDisplay.classList.add('hidden');
         }
 
-        // ─── Check if full text is available ───
         function checkFullTextAvailable() {
             if (!rawFileText && !uploadedFileData) return false;
             return true;
@@ -2407,7 +2522,7 @@
                         renderHistory();
                         showAdminToast(`✅ Saved "${type}" to project "${projectName}"`, 'success');
                         logMessage(`Saved ${type} to project "${projectName}" for user ${currentUser.username}`,
-                        'success');
+                            'success');
                         return true;
                     } else { showAdminToast('Failed to save to JSON Bin.', 'error'); return false; }
                 } catch (err) { showAdminToast('Error saving: ' + err.message, 'error'); return false; }
@@ -2415,12 +2530,11 @@
             return true;
         }
 
-        // ─── GLOBAL SWITCH TAB ───
         window.switchTab = function(activeTab) {
-            [tabViewer, tabSummary, tabExam, tabKeyConcepts].forEach(t => t.className =
+            [tabViewer, tabSummary, tabExam, tabKeyConcepts, tabSolver].forEach(t => t.className =
                 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200'
                 );
-            [viewerPane, summaryPane, examPane, keyconceptsPane].forEach(p => p.classList.add('hidden'));
+            [viewerPane, summaryPane, examPane, keyconceptsPane, solverPane].forEach(p => p.classList.add('hidden'));
             if (activeTab === 'viewer') {
                 tabViewer.className =
                     'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
@@ -2482,6 +2596,12 @@
                 keyconceptsPane.classList.remove('hidden');
                 keyconceptsIntro.classList.remove('hidden');
                 keyconceptsActive.classList.add('hidden');
+            } else if (activeTab === 'solver') {
+                tabSolver.className =
+                    'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
+                solverPane.classList.remove('hidden');
+                solverIntro.classList.remove('hidden');
+                solverResponseContainer.classList.add('hidden');
             }
         };
 
@@ -2501,7 +2621,7 @@
                         if (users[currentUser.email] && users[currentUser.email].projects) {
                             const userProjects = users[currentUser.email].projects;
                             localStorage.setItem('pungystudio_history_' + currentUser.email, JSON.stringify(
-                            userProjects));
+                                userProjects));
                             renderHistory();
                             return;
                         }
@@ -2545,7 +2665,7 @@
             });
         }
 
-        // ─── RESTORE PROJECT ───
+        // ─── RESTORE PROJECT (also sets rawFileText from merge content) ───
         function restoreProject(project) {
             if (!currentUser) { showAdminToast('Please login first.', 'warning'); return; }
             (async function() {
@@ -2567,27 +2687,33 @@
                     workspaceSection.classList.remove('hidden');
                     uploadSection.classList.add('hidden');
 
+                    // Attempt to get full text from aiify or merge
+                    let fullText = '';
                     if (data.aiify) {
                         const tempDiv = document.createElement('div');
                         tempDiv.innerHTML = data.aiify;
-                        const extractedText = tempDiv.textContent || tempDiv.innerText || '';
-                        if (extractedText && extractedText.trim().length > 0) {
-                            rawFileText = extractedText;
+                        fullText = tempDiv.textContent || tempDiv.innerText || '';
+                        if (fullText.trim().length > 0) {
+                            rawFileText = fullText;
                             hasFullText = true;
                             logMessage(`✅ Extracted full text from AI-ify (${rawFileText.length} chars)`, 'success');
-                        } else {
-                            const allText = tempDiv.innerText || tempDiv.textContent || '';
-                            if (allText.trim().length > 0) { rawFileText = allText;
-                                hasFullText = true;
-                                logMessage(`✅ Extracted full text from AI-ify (${rawFileText.length} chars)`,
-                                'success'); } else { hasFullText = false;
-                                logMessage(`⚠️ Could not extract text from AI-ify content`, 'warning'); }
+                        }
+                    } else if (data.merge) {
+                        // Extract text from merge HTML
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = data.merge;
+                        fullText = tempDiv.textContent || tempDiv.innerText || '';
+                        if (fullText.trim().length > 0) {
+                            rawFileText = fullText;
+                            hasFullText = true;
+                            logMessage(`✅ Extracted full text from Merge (${rawFileText.length} chars)`, 'success');
                         }
                     } else {
                         hasFullText = false;
-                        logMessage(`ℹ️ No AI-ify content in this project. Full text not available.`, 'info');
+                        logMessage(`ℹ️ No AI-ify or Merge content in this project. Full text not available.`, 'info');
                     }
 
+                    // Display AI-ify if present
                     if (data.aiify) {
                         window.switchTab('viewer');
                         viewerContent.innerHTML = `
@@ -2601,17 +2727,28 @@
                         document.getElementById('clear-restored')?.addEventListener('click', function() {
                             viewerContent.innerHTML = originalViewerHtml || '';
                         });
+                    } else if (data.merge) {
+                        // If no aiify but merge exists, show merge in viewer
+                        window.switchTab('viewer');
+                        viewerContent.innerHTML = `
+                            <div class="mb-4 flex items-center justify-between text-xs text-indigo-400 font-medium bg-indigo-950/40 border border-indigo-900 p-2 rounded-lg animate-fade-up">
+                                <span>📜 Restored Merge for "${escapeHtml(project)}"</span>
+                            </div>
+                            <div class="space-y-4">${data.merge}</div>
+                        `;
+                        originalViewerHtml = viewerContent.innerHTML;
                     } else {
                         window.switchTab('viewer');
                         viewerContent.innerHTML = `
                             <div class="glass rounded-xl p-8 text-center text-slate-400 animate-fade-up">
                                 <p class="text-lg font-medium">📋 "${escapeHtml(project)}"</p>
-                                <p class="text-sm mt-2">No AI‑ify content found.</p>
-                                <p class="text-xs mt-1">${hasFullText ? 'You can still generate summaries and exams from the AI-ify content.' : 'Please upload the original document to generate new AI content.'}</p>
+                                <p class="text-sm mt-2">No AI‑ify or Merge content found.</p>
+                                <p class="text-xs mt-1">${hasFullText ? 'You can still generate summaries and exams from the extracted text.' : 'Please upload the original document to generate new AI content.'}</p>
                             </div>
                         `;
                     }
 
+                    // Summary
                     if (data.summary) {
                         window.switchTab('summary');
                         summaryIntro.classList.add('hidden');
@@ -2622,6 +2759,7 @@
                         `;
                     }
 
+                    // Key Concepts
                     if (data.keyconcepts) {
                         window.switchTab('keyconcepts');
                         keyconceptsIntro.classList.add('hidden');
@@ -2632,6 +2770,7 @@
                         `;
                     }
 
+                    // Merge preview
                     if (data.merge) {
                         mergeResult.classList.remove('hidden');
                         mergePreview.innerHTML = `
@@ -2642,14 +2781,13 @@
                     }
 
                     if (hasFullText) {
-                        showAdminToast(`✅ "${project}" restored (full text available from AI-ify)`, 'success');
+                        showAdminToast(`✅ "${project}" restored (full text available)`, 'success');
                         logMessage(`Project "${project}" restored. Full text available for further AI generation.`,
                             'success');
                     } else {
-                        showAdminToast(`📋 "${project}" restored (no AI-ify – upload document to generate more)`,
+                        showAdminToast(`📋 "${project}" restored (no full text – upload document to generate more)`,
                             'warning');
-                        logMessage(`Project "${project}" restored without full text. Upload document for AI generation.`,
-                            'warning');
+                        logMessage(`Project "${project}" restored without full text.`, 'warning');
                     }
                 } catch (err) {
                     showAdminToast('Error restoring: ' + err.message, 'error');
@@ -2697,8 +2835,7 @@
             return project;
         }
 
-        // ─── THEORY EXAM FUNCTIONS ───
-
+        // ─── THEORY EXAM FUNCTIONS ─── (unchanged)
         function renderTheoryModeDiv() {
             theoryContainer.innerHTML = '';
             totalQuestionsBadge.textContent = `${examQuestions.length} Theory Questions`;
@@ -2902,6 +3039,155 @@
             }
         }
 
+        // ─── HTML-to-Text helper ───
+        function convertHtmlToPlainText(html) {
+            if (!html) return '';
+            try {
+                if (typeof htmlToText !== 'undefined' && htmlToText.convert) {
+                    return htmlToText.convert(html, {
+                        wordwrap: 130,
+                        selectors: [
+                            { selector: 'a', options: { ignoreHref: true } },
+                            { selector: 'img', format: 'skip' }
+                        ]
+                    });
+                }
+            } catch (e) {
+                logMessage('html-to-text conversion failed: ' + e.message, 'warning');
+            }
+            try {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                return doc.body.textContent || '';
+            } catch (e) {
+                return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+            }
+        }
+
+        // ─── Solver Logic ───
+        async function runSolver(askSpecific = false) {
+            const question = solverQuestion.value.trim();
+            if (askSpecific && !question) {
+                showAdminToast('Please enter a specific question.', 'warning');
+                return;
+            }
+
+            // Check if document is loaded
+            const hasDoc = rawFileText && rawFileText.length > 0;
+            if (!hasDoc && !uploadedFileData) {
+                showError('No document loaded. Please upload a document first.');
+                return;
+            }
+
+            // Prepare prompt
+            let docText = rawFileText || '';
+            if (!docText && uploadedFileData) {
+                docText = '[Document uploaded as PDF/Image – AI will process it]';
+            }
+
+            // Truncate if needed
+            const maxDocLength = 25000;
+            if (docText.length > maxDocLength) {
+                docText = docText.substring(0, maxDocLength) + '... [truncated]';
+            }
+
+            let prompt = '';
+            if (askSpecific) {
+                // User asked a specific question
+                prompt =
+                    `You are an AI assistant that answers questions based on the provided document content. 
+                    Document content:
+                    ${docText}
+                    
+                    Question: ${question}
+                    
+                    Provide a clear, structured answer. If it's a math problem, solve step-by-step. If conceptual, explain thoroughly.
+                    If the question cannot be answered from the document, say so.`;
+            } else {
+                // Auto-detect: ask AI to find and solve all questions in the document
+                prompt =
+                    `You are an expert educator and solver. Analyze the following document and determine if it contains any questions, exercises, problems, or tasks that look like an assignment, test, or exam. 
+                    If you find questions, solve them step-by-step with detailed explanations. If you find multiple questions, solve all of them. 
+                    If the document does not contain any questions or problems, respond with: "This document does not appear to contain any questions, exercises, or problems to solve. It may be a reference or reading material." 
+                    Provide solutions in a clear, structured format with steps and final answers.
+                    
+                    Document content:
+                    ${docText}`;
+            }
+
+            let fileData = null;
+            if (uploadedFileData && !rawFileText) {
+                fileData = uploadedFileData;
+            }
+
+            // Show loading
+            solverSpinner.classList.remove('hidden');
+            solverBtnText.textContent = askSpecific ? 'Thinking...' : 'Scanning...';
+            solverAutoBtn.disabled = true;
+            solverAskBtn.disabled = true;
+            solverResponseContainer.classList.add('hidden');
+
+            try {
+                const result = await callGemini(prompt, fileData);
+                // Format response
+                let htmlResponse = `<div class="space-y-2">`;
+                const lines = result.split('\n');
+                let inStep = false,
+                    inFinal = false;
+                for (let line of lines) {
+                    line = line.trim();
+                    if (!line) { htmlResponse += '<br>'; continue; }
+                    if (line.match(/^Step \d+:/i)) {
+                        if (inStep) htmlResponse += '</div>';
+                        htmlResponse +=
+                            `<div class="step"><span class="step-label">${line}</span><br>`;
+                        inStep = true;
+                        continue;
+                    }
+                    if (line.match(/^(Final Answer|Answer):/i)) {
+                        if (inStep) { htmlResponse += '</div>';
+                            inStep = false; }
+                        if (inFinal) htmlResponse += '</div></div>';
+                        htmlResponse +=
+                            `<div class="final-answer"><span class="answer-label">${line}</span><div class="answer-value">`;
+                        inFinal = true;
+                        continue;
+                    }
+                    if (inStep) {
+                        htmlResponse += line + '<br>';
+                    } else if (inFinal) {
+                        htmlResponse += line + '<br>';
+                    } else {
+                        // Check for headings
+                        if (line.match(/^#{1,3} /)) {
+                            const level = line.match(/^(#{1,3}) /)[1].length;
+                            const text = line.replace(/^#{1,3} /, '');
+                            const tag = `h${level+1}`;
+                            htmlResponse += `<${tag} class="text-${level>=2?'indigo':'purple'}-300 font-bold text-${level===1?'base':level===2?'sm':'xs'} mt-3">${text}</${tag}>`;
+                        } else if (line.startsWith('•') || line.startsWith('-')) {
+                            htmlResponse += `<li class="ml-4 text-sm">${line}</li>`;
+                        } else {
+                            htmlResponse += `<p class="text-sm">${line}</p>`;
+                        }
+                    }
+                }
+                if (inStep) htmlResponse += '</div>';
+                if (inFinal) htmlResponse += '</div></div>';
+                htmlResponse += '</div>';
+
+                solverResponse.innerHTML = htmlResponse;
+                solverResponseContainer.classList.remove('hidden');
+                logMessage(askSpecific ? 'Answered specific question.' : 'Auto-detection completed.', 'success');
+            } catch (err) {
+                showError('Solver error: ' + err.message);
+                logMessage('Solver error: ' + err.message, 'error');
+            } finally {
+                solverSpinner.classList.add('hidden');
+                solverBtnText.textContent = askSpecific ? '❓ Ask Question' : '🔍 Auto‑Detect & Solve';
+                solverAutoBtn.disabled = false;
+                solverAskBtn.disabled = false;
+            }
+        }
+
         // ─── INIT ───
         async function initApp() {
             loadUserSession();
@@ -2969,6 +3255,7 @@
             tabSummary.addEventListener('click', () => window.switchTab('summary'));
             tabExam.addEventListener('click', () => window.switchTab('exam'));
             tabKeyConcepts.addEventListener('click', () => window.switchTab('keyconcepts'));
+            tabSolver.addEventListener('click', () => window.switchTab('solver'));
 
             renderHistory();
             clearHistoryBtn.addEventListener('click', clearHistory);
@@ -3025,6 +3312,8 @@
                 theoryResultsArea.classList.add('hidden');
                 keyconceptsIntro.classList.remove('hidden');
                 keyconceptsActive.classList.add('hidden');
+                solverIntro.classList.remove('hidden');
+                solverResponseContainer.classList.add('hidden');
                 hideError();
                 clearInterval(examTimer);
                 timerDisplay.classList.add('hidden');
@@ -3047,6 +3336,7 @@
                 submitTheoryBtn.classList.add('hidden');
                 submitExamBtn.classList.remove('hidden');
                 theoryImages = {};
+                solverQuestion.value = '';
             }
 
             function showWorkspace() {
@@ -3714,18 +4004,30 @@
                 handleMergeFiles(e.dataTransfer.files);
             });
 
+            // ─── Handle Merge Files (with image support) ───
             async function handleMergeFiles(fileList) {
-                const allowed = ['txt', 'md', 'docx', 'pdf'];
+                const allowed = ['txt', 'md', 'docx', 'pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
                 const promises = [];
                 for (let file of fileList) {
                     const ext = file.name.split('.').pop().toLowerCase();
-                    if (!allowed.includes(ext)) { showError(
-                            `Skipping "${file.name}" – only .txt, .md, .docx, .pdf supported for merging.`);
-                        continue; }
+                    if (!allowed.includes(ext)) {
+                        showError(`Skipping "${file.name}" – unsupported format. Allowed: ${allowed.join(', ')}`);
+                        continue;
+                    }
                     const p = new Promise((resolve, reject) => {
                         const reader = new FileReader();
                         reader.onload = async (e) => {
                             let content = '';
+                            let fileData = null;
+                            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+                            if (isImage) {
+                                const base64 = e.target.result.split(',')[1];
+                                const mimeType = file.type || 'image/' + (ext === 'jpg' ? 'jpeg' : ext);
+                                fileData = { base64, mimeType, name: file.name };
+                                content = `[Image: ${file.name}]`;
+                                resolve({ name: file.name, content, fileData });
+                                return;
+                            }
                             if (ext === 'docx') {
                                 try {
                                     const result = await mammoth.extractRawText({ arrayBuffer: e.target
@@ -3735,14 +4037,16 @@
                             } else if (ext === 'pdf') {
                                 const base64 = e.target.result.split(',')[1];
                                 content = '[PDF content – will be processed by AI]';
-                                const fileData = { base64, mimeType: 'application/pdf', name: file.name };
+                                fileData = { base64, mimeType: 'application/pdf', name: file.name };
                                 resolve({ name: file.name, content, fileData });
                                 return;
                             } else { content = e.target.result; }
-                            resolve({ name: file.name, content, fileData: null });
+                            resolve({ name: file.name, content, fileData });
                         };
                         reader.onerror = reject;
-                        if (ext === 'pdf') reader.readAsDataURL(file);
+                        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+                        if (isImage) reader.readAsDataURL(file);
+                        else if (ext === 'pdf') reader.readAsDataURL(file);
                         else if (ext === 'docx') reader.readAsArrayBuffer(file);
                         else reader.readAsText(file);
                     });
@@ -3764,8 +4068,11 @@
                 mergeFiles.forEach((f, idx) => {
                     const div = document.createElement('div');
                     div.className = 'merge-file-item';
+                    const isImage = f.fileData && f.fileData.mimeType && f.fileData.mimeType.startsWith('image/');
+                    const badge = isImage ? '🖼️' : (f.fileData && f.fileData.mimeType === 'application/pdf' ?
+                        '📄' : '📃');
                     div.innerHTML = `
-                        <span class="text-sm text-slate-200">${f.name}</span>
+                        <span class="text-sm text-slate-200">${badge} ${f.name}</span>
                         <button class="text-xs text-red-400 hover:text-red-300 transition-colors" data-idx="${idx}">✕</button>
                     `;
                     div.querySelector('button').addEventListener('click', () => {
@@ -3778,8 +4085,9 @@
                 });
             }
 
+            // ─── AI Synthesize ───
             mergeSynthesizeBtn.addEventListener('click', async () => {
-                if (mergeFiles.length < 2) { showError('Please add at least 2 files to merge.'); return; }
+                if (mergeFiles.length < 1) { showError('Please add at least 1 file to synthesize.'); return; }
                 if (!currentUser) { showError('Please login first.');
                     openLoginModal(); return; }
                 mergeProgress.classList.remove('hidden');
@@ -3787,19 +4095,38 @@
                 mergeProgress.innerHTML = buildSiriWaveHTML('Pungystudio AI is synthesizing your documents...');
                 mergeSynthesizeBtn.disabled = true;
                 logMessage('Starting AI synthesis...', 'info');
+
                 try {
                     let combinedText = '';
                     const parts = [{ text: '' }];
                     let filenames = [];
+                    let hasImages = false;
+
                     for (let f of mergeFiles) {
                         filenames.push(f.name);
                         if (f.fileData) {
-                            parts.push({ inlineData: { mimeType: f.fileData.mimeType, data: f.fileData.base64 } });
-                            combinedText += `\n\n--- PDF: ${f.name} ---\n[PDF content included as image]`;
-                        } else { combinedText += `\n\n--- File: ${f.name} ---\n${f.content}`; }
+                            const isImage = f.fileData.mimeType && f.fileData.mimeType.startsWith('image/');
+                            if (isImage) {
+                                parts.push({ inlineData: { mimeType: f.fileData.mimeType, data: f.fileData
+                                        .base64 } });
+                                hasImages = true;
+                                combinedText += `\n\n--- Image: ${f.name} ---\n[Image included for analysis]`;
+                            } else if (f.fileData.mimeType === 'application/pdf') {
+                                parts.push({ inlineData: { mimeType: 'application/pdf', data: f.fileData
+                                        .base64 } });
+                                combinedText += `\n\n--- PDF: ${f.name} ---\n[PDF content included]`;
+                            } else {
+                                combinedText += `\n\n--- File: ${f.name} ---\n${f.content}`;
+                            }
+                        } else {
+                            combinedText += `\n\n--- File: ${f.name} ---\n${f.content}`;
+                        }
                     }
-                    parts[0].text =
-                        `You are an expert document synthesizer. You are given multiple documents. Your task is to merge them into a single, coherent, well-structured document. Remove duplicate information, group related topics together, add appropriate headings, and produce a unified narrative. The final output should be a clean HTML document suitable for study or reference. Use Tailwind CSS classes for styling.\n\nHere are the documents:\n${combinedText}`;
+
+                    let prompt =
+                        `You are an expert document synthesizer. You are given multiple documents (text, PDFs, and images). Your task is to merge them into a single, coherent, well-structured document. Remove duplicate information, group related topics together, add appropriate headings, and produce a unified narrative. If images are provided, describe them in context and incorporate their content meaningfully. The final output should be a clean HTML document suitable for study or reference. Use Tailwind CSS classes for styling.\n\nHere are the documents:\n${combinedText}`;
+
+                    parts[0].text = prompt;
 
                     const active = getActiveKeys();
                     const keyToUse = active.length > 0 ? active[0].key : '';
@@ -3824,6 +4151,7 @@
                         '').trim();
                     else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '')
                         .trim();
+
                     mergeProgress.classList.add('hidden');
                     mergeResult.classList.remove('hidden');
                     mergePreview.innerHTML = cleaned;
@@ -3835,6 +4163,7 @@
                         currentProject = name && name.trim() ? name.trim() : 'Untitled';
                         updateProjectDisplay(currentProject);
                     }
+                    // Save merge to history (JSON Bin)
                     saveHistoryToUser('merge', currentProject, cleaned);
 
                 } catch (err) {
@@ -3844,30 +4173,69 @@
                 } finally { mergeSynthesizeBtn.disabled = false; }
             });
 
+            // ─── Merge Download ───
             mergeDownloadBtn.addEventListener('click', async () => {
                 if (!window.synthesizedContent) { showError('No synthesized content to download.'); return; }
                 try {
                     const { Document, Packer, Paragraph, TextRun } = docx;
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = window.synthesizedContent;
-                    const textContent = tempDiv.textContent || tempDiv.innerText || '';
-                    const lines = textContent.split('\n').filter(line => line.trim() !== '');
+                    let plainText = convertHtmlToPlainText(window.synthesizedContent);
+                    const lines = plainText.split('\n').filter(line => line.trim() !== '');
                     const children = [];
                     lines.forEach(line => {
                         children.push(new Paragraph({
-                            children: [new TextRun({ text: line, size: 24 })],
+                            children: [new TextRun({ text: line.trim(), size: 24 })],
                             spacing: { after: 120 }
                         }));
                     });
-                    const doc = new Document({ sections: [{ properties: {}, children }] });
+                    if (children.length === 0) {
+                        children.push(new Paragraph({
+                            children: [new TextRun({ text: 'Synthesized document (no text content extracted)',
+                                size: 24 })],
+                            spacing: { after: 120 }
+                        }));
+                    }
+                    const doc = new Document({
+                        sections: [{
+                            properties: {},
+                            children: children
+                        }]
+                    });
                     const blob = await Packer.toBlob(doc);
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(blob);
                     link.download = 'synthesized_document.docx';
+                    document.body.appendChild(link);
                     link.click();
-                    URL.revokeObjectURL(link.href);
-                    logMessage('Synthesized document downloaded.', 'success');
-                } catch (err) { showError('Error creating .docx: ' + err.message); }
+                    document.body.removeChild(link);
+                    setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+                    logMessage('Synthesized document downloaded (clean text).', 'success');
+                } catch (err) {
+                    showError('Error creating .docx: ' + err.message);
+                    logMessage('Download error: ' + err.message, 'error');
+                }
+            });
+
+            // ─── Solver Events ───
+            solverAutoBtn.addEventListener('click', () => runSolver(false));
+            solverAskBtn.addEventListener('click', () => runSolver(true));
+            solverClearBtn.addEventListener('click', () => {
+                solverQuestion.value = '';
+                solverResponseContainer.classList.add('hidden');
+            });
+            solverCopyBtn.addEventListener('click', () => {
+                const text = solverResponse.innerText || solverResponse.textContent || '';
+                if (text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showAdminToast('Copied to clipboard.', 'success');
+                    }).catch(() => {
+                        const range = document.createRange();
+                        range.selectNode(solverResponse);
+                        window.getSelection().removeAllRanges();
+                        window.getSelection().addRange(range);
+                        document.execCommand('copy');
+                        showAdminToast('Copied!', 'success');
+                    });
+                }
             });
 
             setInterval(async () => { await loadKeysFromJsonBin(); }, 120000);
@@ -3876,4 +4244,4 @@
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
-    </html>
+                            </html>
