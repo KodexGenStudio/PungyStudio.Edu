@@ -1060,47 +1060,64 @@
         .aoc-response {
             line-height: 1.8;
         }
-        .aoc-response .location {
+        .aoc-response .aoc-section {
+            margin: 1rem 0;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
             background: var(--bg-secondary);
+        }
+        .aoc-response .aoc-section .section-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: block;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.03em;
+        }
+        .aoc-response .aoc-section .section-title.explanation-title {
+            color: #818cf8;
+        }
+        .aoc-response .aoc-section .section-title.location-title {
+            color: #f59e0b;
+        }
+        .aoc-response .aoc-section .section-title.summary-title {
+            color: #34d399;
+        }
+        .aoc-response .aoc-section p {
+            margin: 0.3rem 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .aoc-response .aoc-section ul,
+        .aoc-response .aoc-section ol {
+            padding-left: 1.5rem;
+            margin: 0.3rem 0;
+            color: var(--text-secondary);
+        }
+        .aoc-response .aoc-section li {
+            margin: 0.2rem 0;
+            font-size: 0.9rem;
+        }
+        .aoc-response .aoc-section strong {
+            color: var(--text-primary);
+        }
+        .aoc-response .aoc-section .location-quote {
+            background: var(--bg-primary);
             border-left: 3px solid #f59e0b;
             padding: 0.5rem 0.75rem;
             margin: 0.5rem 0;
             border-radius: 0 0.5rem 0.5rem 0;
-        }
-        .aoc-response .location .loc-label {
-            font-weight: 600;
-            color: #f59e0b;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .aoc-response .explanation {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.02));
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 0.75rem;
-            padding: 1rem 1.5rem;
-            margin: 0.75rem 0;
-        }
-        .aoc-response .explanation .exp-label {
-            font-weight: 700;
-            color: #818cf8;
+            font-style: italic;
+            color: var(--text-secondary);
             font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
-        .aoc-response .summary {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
-            padding: 0.75rem 1.25rem;
-            margin: 0.75rem 0;
-        }
-        .aoc-response .summary .sum-label {
-            font-weight: 600;
-            color: #34d399;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        .aoc-response .aoc-section .location-ref {
+            font-size: 0.75rem;
+            color: #f59e0b;
+            display: block;
+            margin-top: 0.2rem;
+            font-style: normal;
+            font-weight: 500;
         }
 
         @media (max-width: 640px) {
@@ -1214,6 +1231,9 @@
             .aoc-input-area {
                 min-height: 50px;
             }
+            .aoc-response .aoc-section {
+                padding: 0.5rem 0.75rem;
+            }
         }
     </style>
 </head>
@@ -1247,7 +1267,7 @@
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-2">
                         <span class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[0.6rem] font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider shadow-lg">Pungystudio</span>
-                        <span class="text-[0.55rem] text-slate-500 font-mono bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700">v8.2 Pro</span>
+                        <span class="text-[0.55rem] text-slate-500 font-mono bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700">v8.3 Pro</span>
                     </div>
                     <h1 class="text-lg md:text-xl font-bold text-white hidden sm:block">Document &amp; AI Study Suite</h1>
                 </div>
@@ -1513,13 +1533,11 @@
                         </div>
 
                         <div id="solver-active-area" class="space-y-4">
-                            <!-- Optional: user can ask a specific question -->
                             <div>
                                 <label class="text-sm font-medium text-slate-300 block mb-1.5">Ask a specific question (optional)</label>
                                 <textarea id="solver-question" rows="2" class="solver-input-area w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-500" placeholder="e.g., Solve the equation from page 2, or explain the main theory..."></textarea>
                             </div>
 
-                            <!-- Buttons -->
                             <div class="flex flex-wrap items-center gap-4 pt-2">
                                 <button id="solver-auto-btn" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm hover:scale-105 flex items-center gap-2">
                                     <svg class="w-4 h-4 animate-spin hidden" id="solver-spinner" fill="none" viewBox="0 0 24 24">
@@ -1608,7 +1626,7 @@
 
     <script>
         // ════════════════════════════════════════════════════════════════
-        // Pungystudio AI – v8.2 Pro – AI AOC (Area of Concentration)
+        // Pungystudio AI – v8.3 Pro – Fixed AOC & Solver styling + tab persistence
         // ════════════════════════════════════════════════════════════════
 
         const JSON_BIN_ID = '6a7a4f06da38895dfed2f54d';
@@ -1730,7 +1748,6 @@
         const solverClearBtn = $('solver-clear-btn');
         const solverCopyBtn = $('solver-copy-btn');
         const solverIntro = $('solver-intro');
-        const solverActiveArea = $('solver-active-area');
 
         // ─── AOC DOM refs ───
         const aocInput = $('aoc-input');
@@ -1742,7 +1759,6 @@
         const aocClearBtn = $('aoc-clear-btn');
         const aocCopyBtn = $('aoc-copy-btn');
         const aocIntro = $('aoc-intro');
-        const aocActiveArea = $('aoc-active-area');
 
         // ─── Global state ───
         let isVerified = false,
@@ -2634,12 +2650,119 @@
             return true;
         }
 
+        // ─── MARKDOWN TO HTML CONVERTER (shared) ───
+        function markdownToHtml(text) {
+            if (!text) return '';
+            let html = '';
+            const lines = text.split('\n');
+            let inList = false,
+                listType = '';
+            let inCode = false;
+            let codeContent = '';
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+
+                // Code block handling
+                if (line.trim().startsWith('```')) {
+                    if (!inCode) {
+                        inCode = true;
+                        codeContent = '';
+                        continue;
+                    } else {
+                        inCode = false;
+                        html += `<div class="math-block"><pre>${escapeHtml(codeContent)}</pre></div>`;
+                        continue;
+                    }
+                }
+                if (inCode) {
+                    codeContent += line + '\n';
+                    continue;
+                }
+
+                // Handle lists
+                const trimmed = line.trim();
+                const ulMatch = trimmed.match(/^[-*]\s+(.+)/);
+                const olMatch = trimmed.match(/^\d+\.\s+(.+)/);
+                if (ulMatch) {
+                    if (!inList || listType !== 'ul') {
+                        if (inList) html += `</${listType}>`;
+                        inList = true;
+                        listType = 'ul';
+                        html += `<ul class="list-disc pl-5 space-y-1 text-sm text-slate-300">`;
+                    }
+                    html += `<li>${inlineMarkdown(ulMatch[1])}</li>`;
+                    continue;
+                }
+                if (olMatch) {
+                    if (!inList || listType !== 'ol') {
+                        if (inList) html += `</${listType}>`;
+                        inList = true;
+                        listType = 'ol';
+                        html += `<ol class="list-decimal pl-5 space-y-1 text-sm text-slate-300">`;
+                    }
+                    html += `<li>${inlineMarkdown(olMatch[1])}</li>`;
+                    continue;
+                }
+                if (inList && !ulMatch && !olMatch) {
+                    html += `</${listType}>`;
+                    inList = false;
+                    listType = '';
+                }
+
+                // Headings
+                if (line.match(/^### /)) {
+                    html += `<h4 class="text-indigo-300 font-bold text-sm mt-4 mb-1">${inlineMarkdown(line.replace(/^### /, ''))}</h4>`;
+                    continue;
+                }
+                if (line.match(/^## /)) {
+                    html += `<h3 class="text-purple-300 font-bold text-base mt-5 mb-2">${inlineMarkdown(line.replace(/^## /, ''))}</h3>`;
+                    continue;
+                }
+                if (line.match(/^# /)) {
+                    html += `<h2 class="text-white font-bold text-lg mt-6 mb-2">${inlineMarkdown(line.replace(/^# /, ''))}</h2>`;
+                    continue;
+                }
+
+                // Horizontal rule
+                if (line.match(/^---$/)) {
+                    html += `<hr class="border-slate-700 my-3">`;
+                    continue;
+                }
+
+                // Empty line
+                if (!line.trim()) {
+                    html += `<br>`;
+                    continue;
+                }
+
+                // Paragraph
+                html += `<p class="text-sm text-slate-300 my-1">${inlineMarkdown(line)}</p>`;
+            }
+            if (inList) html += `</${listType}>`;
+            return html;
+        }
+
+        function inlineMarkdown(text) {
+            if (!text) return '';
+            let result = text;
+            // Bold
+            result = result.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>');
+            // Italic
+            result = result.replace(/\*(.*?)\*/g, '<em class="text-slate-300">$1</em>');
+            // Inline code
+            result = result.replace(/`([^`]+)`/g, '<code class="bg-slate-800 px-1.5 py-0.5 rounded text-sm text-indigo-300 font-mono">$1</code>');
+            return result;
+        }
+
+        // ─── SWITCH TAB (with persistence) ───
         window.switchTab = function(activeTab) {
             [tabViewer, tabSummary, tabExam, tabKeyConcepts, tabSolver, tabAoc].forEach(t => t.className =
                 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200'
                 );
             [viewerPane, summaryPane, examPane, keyconceptsPane, solverPane, aocPane].forEach(p => p.classList.add(
             'hidden'));
+
             if (activeTab === 'viewer') {
                 tabViewer.className =
                     'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
@@ -2705,14 +2828,29 @@
                 tabSolver.className =
                     'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
                 solverPane.classList.remove('hidden');
-                solverIntro.classList.remove('hidden');
-                solverResponseContainer.classList.add('hidden');
+                // Check if there's content in the response
+                const hasContent = solverResponse.innerHTML && solverResponse.innerHTML.trim().length > 0 &&
+                    solverResponse.textContent.trim().length > 0;
+                if (hasContent) {
+                    solverIntro.classList.add('hidden');
+                    solverResponseContainer.classList.remove('hidden');
+                } else {
+                    solverIntro.classList.remove('hidden');
+                    solverResponseContainer.classList.add('hidden');
+                }
             } else if (activeTab === 'aoc') {
                 tabAoc.className =
                     'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
                 aocPane.classList.remove('hidden');
-                aocIntro.classList.remove('hidden');
-                aocResponseContainer.classList.add('hidden');
+                const hasContent = aocResponse.innerHTML && aocResponse.innerHTML.trim().length > 0 &&
+                    aocResponse.textContent.trim().length > 0;
+                if (hasContent) {
+                    aocIntro.classList.add('hidden');
+                    aocResponseContainer.classList.remove('hidden');
+                } else {
+                    aocIntro.classList.remove('hidden');
+                    aocResponseContainer.classList.add('hidden');
+                }
             }
         };
 
@@ -2798,7 +2936,6 @@
                     workspaceSection.classList.remove('hidden');
                     uploadSection.classList.add('hidden');
 
-                    // Extract full text from aiify or merge
                     let fullText = '';
                     if (data.aiify) {
                         const tempDiv = document.createElement('div');
@@ -2823,7 +2960,6 @@
                         logMessage(`ℹ️ No AI-ify or Merge content in this project. Full text not available.`, 'info');
                     }
 
-                    // Display AI-ify if present
                     if (data.aiify) {
                         window.switchTab('viewer');
                         viewerContent.innerHTML = `
@@ -2857,7 +2993,6 @@
                         `;
                     }
 
-                    // Summary
                     if (data.summary) {
                         window.switchTab('summary');
                         summaryIntro.classList.add('hidden');
@@ -2868,7 +3003,6 @@
                         `;
                     }
 
-                    // Key Concepts
                     if (data.keyconcepts) {
                         window.switchTab('keyconcepts');
                         keyconceptsIntro.classList.add('hidden');
@@ -2879,7 +3013,6 @@
                         `;
                     }
 
-                    // Merge preview
                     if (data.merge) {
                         mergeResult.classList.remove('hidden');
                         mergePreview.innerHTML = `
@@ -3228,59 +3361,21 @@
             solverAutoBtn.disabled = true;
             solverAskBtn.disabled = true;
             solverResponseContainer.classList.add('hidden');
+            solverIntro.classList.add('hidden');
 
             try {
                 const result = await callGemini(prompt, fileData);
-                let htmlResponse = `<div class="space-y-2">`;
-                const lines = result.split('\n');
-                let inStep = false,
-                    inFinal = false;
-                for (let line of lines) {
-                    line = line.trim();
-                    if (!line) { htmlResponse += '<br>'; continue; }
-                    if (line.match(/^Step \d+:/i)) {
-                        if (inStep) htmlResponse += '</div>';
-                        htmlResponse +=
-                            `<div class="step"><span class="step-label">${line}</span><br>`;
-                        inStep = true;
-                        continue;
-                    }
-                    if (line.match(/^(Final Answer|Answer):/i)) {
-                        if (inStep) { htmlResponse += '</div>';
-                            inStep = false; }
-                        if (inFinal) htmlResponse += '</div></div>';
-                        htmlResponse +=
-                            `<div class="final-answer"><span class="answer-label">${line}</span><div class="answer-value">`;
-                        inFinal = true;
-                        continue;
-                    }
-                    if (inStep) {
-                        htmlResponse += line + '<br>';
-                    } else if (inFinal) {
-                        htmlResponse += line + '<br>';
-                    } else {
-                        if (line.match(/^#{1,3} /)) {
-                            const level = line.match(/^(#{1,3}) /)[1].length;
-                            const text = line.replace(/^#{1,3} /, '');
-                            const tag = `h${level+1}`;
-                            htmlResponse += `<${tag} class="text-${level>=2?'indigo':'purple'}-300 font-bold text-${level===1?'base':level===2?'sm':'xs'} mt-3">${text}</${tag}>`;
-                        } else if (line.startsWith('•') || line.startsWith('-')) {
-                            htmlResponse += `<li class="ml-4 text-sm">${line}</li>`;
-                        } else {
-                            htmlResponse += `<p class="text-sm">${line}</p>`;
-                        }
-                    }
-                }
-                if (inStep) htmlResponse += '</div>';
-                if (inFinal) htmlResponse += '</div></div>';
-                htmlResponse += '</div>';
-
-                solverResponse.innerHTML = htmlResponse;
+                // Use the markdown converter
+                const formatted = markdownToHtml(result);
+                solverResponse.innerHTML = formatted;
                 solverResponseContainer.classList.remove('hidden');
+                solverIntro.classList.add('hidden');
                 logMessage(askSpecific ? 'Answered specific question.' : 'Auto-detection completed.', 'success');
             } catch (err) {
                 showError('Solver error: ' + err.message);
                 logMessage('Solver error: ' + err.message, 'error');
+                solverIntro.classList.remove('hidden');
+                solverResponseContainer.classList.add('hidden');
             } finally {
                 solverSpinner.classList.add('hidden');
                 solverBtnText.textContent = askSpecific ? '❓ Ask Question' : '🔍 Auto‑Detect & Solve';
@@ -3335,65 +3430,94 @@
             aocBtnText.textContent = 'Searching...';
             aocSearchBtn.disabled = true;
             aocResponseContainer.classList.add('hidden');
+            aocIntro.classList.add('hidden');
 
             try {
                 const result = await callGemini(prompt, fileData);
-                // Format the response with nice styling
-                let htmlResponse = `<div class="space-y-3">`;
+
+                // Parse sections from the result
+                let html = `<div class="space-y-3">`;
                 const lines = result.split('\n');
-                let inExplanation = false,
-                    inLocations = false,
-                    inSummary = false;
+                let currentSection = '';
+                let sectionContent = '';
+
                 for (let line of lines) {
-                    line = line.trim();
-                    if (!line) { htmlResponse += '<br>'; continue; }
-                    if (line.match(/^\*\*Explanation\*\*|^Explanation:/i)) {
-                        if (inLocations) htmlResponse += '</div>';
-                        if (inSummary) htmlResponse += '</div>';
-                        htmlResponse += `<div class="explanation"><span class="exp-label">📖 Explanation</span><br>`;
-                        inExplanation = true;
-                        inLocations = false;
-                        inSummary = false;
+                    const trimmed = line.trim();
+                    // Detect section headers
+                    if (trimmed.match(/^\*\*Explanation\*\*|^Explanation:/i)) {
+                        if (currentSection) {
+                            html +=
+                                `<div class="aoc-section"><span class="section-title ${currentSection}-title">${currentSection === 'explanation' ? '📖 Explanation' : currentSection === 'location' ? '📍 Locations & Context' : '📌 Summary'}</span>${sectionContent}</div>`;
+                        }
+                        currentSection = 'explanation';
+                        sectionContent = '';
                         continue;
                     }
-                    if (line.match(/^\*\*Locations\/Context\*\*|^Locations\/Context:/i)) {
-                        if (inExplanation) htmlResponse += '</div>';
-                        if (inSummary) htmlResponse += '</div>';
-                        htmlResponse += `<div class="location"><span class="loc-label">📍 Locations & Context</span><br>`;
-                        inExplanation = false;
-                        inLocations = true;
-                        inSummary = false;
+                    if (trimmed.match(/^\*\*Locations\/Context\*\*|^Locations\/Context:/i)) {
+                        if (currentSection) {
+                            html +=
+                                `<div class="aoc-section"><span class="section-title ${currentSection}-title">${currentSection === 'explanation' ? '📖 Explanation' : currentSection === 'location' ? '📍 Locations & Context' : '📌 Summary'}</span>${sectionContent}</div>`;
+                        }
+                        currentSection = 'location';
+                        sectionContent = '';
                         continue;
                     }
-                    if (line.match(/^\*\*Summary\*\*|^Summary:/i)) {
-                        if (inExplanation) htmlResponse += '</div>';
-                        if (inLocations) htmlResponse += '</div>';
-                        htmlResponse += `<div class="summary"><span class="sum-label">📌 Summary</span><br>`;
-                        inExplanation = false;
-                        inLocations = false;
-                        inSummary = true;
+                    if (trimmed.match(/^\*\*Summary\*\*|^Summary:/i)) {
+                        if (currentSection) {
+                            html +=
+                                `<div class="aoc-section"><span class="section-title ${currentSection}-title">${currentSection === 'explanation' ? '📖 Explanation' : currentSection === 'location' ? '📍 Locations & Context' : '📌 Summary'}</span>${sectionContent}</div>`;
+                        }
+                        currentSection = 'summary';
+                        sectionContent = '';
                         continue;
                     }
-                    if (inExplanation || inLocations || inSummary) {
-                        // bold any quoted text
-                        line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                        htmlResponse += `<p class="text-sm">${line}</p>`;
+
+                    // If we're in a section, accumulate content
+                    if (currentSection) {
+                        if (trimmed) {
+                            // Convert inline markdown
+                            let processed = inlineMarkdown(trimmed);
+                            // Special handling for location quotes (text in quotes or with "In paragraph" etc.)
+                            if (currentSection === 'location') {
+                                // Check if it looks like a quoted text or a location reference
+                                if (trimmed.match(/^["“]/) || trimmed.match(/^In (paragraph|section|chapter|page)/i)) {
+                                    processed =
+                                        `<div class="location-quote">${processed}</div>`;
+                                }
+                            }
+                            sectionContent += `<p class="text-sm text-slate-300">${processed}</p>`;
+                        } else {
+                            sectionContent += '<br>';
+                        }
                     } else {
-                        // Default paragraph
-                        htmlResponse += `<p class="text-sm">${line}</p>`;
+                        // Not in a section yet, just add as text
+                        if (trimmed) {
+                            html += `<p class="text-sm text-slate-300">${inlineMarkdown(trimmed)}</p>`;
+                        }
                     }
                 }
-                if (inExplanation) htmlResponse += '</div>';
-                if (inLocations) htmlResponse += '</div>';
-                if (inSummary) htmlResponse += '</div>';
-                htmlResponse += '</div>';
 
-                aocResponse.innerHTML = htmlResponse;
+                // Close last section
+                if (currentSection) {
+                    html +=
+                        `<div class="aoc-section"><span class="section-title ${currentSection}-title">${currentSection === 'explanation' ? '📖 Explanation' : currentSection === 'location' ? '📍 Locations & Context' : '📌 Summary'}</span>${sectionContent}</div>`;
+                }
+                html += '</div>';
+
+                // If no sections were detected, fallback to markdown conversion
+                if (!html.includes('aoc-section')) {
+                    html = markdownToHtml(result);
+                }
+
+                aocResponse.innerHTML = html;
                 aocResponseContainer.classList.remove('hidden');
+                aocIntro.classList.add('hidden');
                 logMessage(`AOC search for "${topic}" completed.`, 'success');
             } catch (err) {
                 showError('AOC search error: ' + err.message);
                 logMessage('AOC search error: ' + err.message, 'error');
+                aocIntro.classList.remove('hidden');
+                aocResponseContainer.classList.add('hidden');
             } finally {
                 aocSpinner.classList.add('hidden');
                 aocBtnText.textContent = '🔎 Search AOC';
@@ -3554,6 +3678,8 @@
                 theoryImages = {};
                 solverQuestion.value = '';
                 aocInput.value = '';
+                solverResponse.innerHTML = '';
+                aocResponse.innerHTML = '';
             }
 
             function showWorkspace() {
@@ -4436,6 +4562,8 @@
             solverClearBtn.addEventListener('click', () => {
                 solverQuestion.value = '';
                 solverResponseContainer.classList.add('hidden');
+                solverIntro.classList.remove('hidden');
+                solverResponse.innerHTML = '';
             });
             solverCopyBtn.addEventListener('click', () => {
                 const text = solverResponse.innerText || solverResponse.textContent || '';
@@ -4458,6 +4586,8 @@
             aocClearBtn.addEventListener('click', () => {
                 aocInput.value = '';
                 aocResponseContainer.classList.add('hidden');
+                aocIntro.classList.remove('hidden');
+                aocResponse.innerHTML = '';
             });
             aocCopyBtn.addEventListener('click', () => {
                 const text = aocResponse.innerText || aocResponse.textContent || '';
@@ -4475,7 +4605,6 @@
                 }
             });
 
-            // Allow Enter key to trigger AOC search
             aocInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -4489,4 +4618,4 @@
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
-                            </html>
+    </html>
