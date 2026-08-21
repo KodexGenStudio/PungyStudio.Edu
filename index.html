@@ -1052,6 +1052,57 @@
             color: var(--text-primary);
         }
 
+        /* ─── AI AOC Styles ─── */
+        .aoc-input-area {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .aoc-response {
+            line-height: 1.8;
+        }
+        .aoc-response .location {
+            background: var(--bg-secondary);
+            border-left: 3px solid #f59e0b;
+            padding: 0.5rem 0.75rem;
+            margin: 0.5rem 0;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+        .aoc-response .location .loc-label {
+            font-weight: 600;
+            color: #f59e0b;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .aoc-response .explanation {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.02));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+            margin: 0.75rem 0;
+        }
+        .aoc-response .explanation .exp-label {
+            font-weight: 700;
+            color: #818cf8;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .aoc-response .summary {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.25rem;
+            margin: 0.75rem 0;
+        }
+        .aoc-response .summary .sum-label {
+            font-weight: 600;
+            color: #34d399;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
         @media (max-width: 640px) {
             .admin-modal .modal-box {
                 padding: 1.25rem;
@@ -1160,6 +1211,9 @@
             .solver-input-area {
                 min-height: 60px;
             }
+            .aoc-input-area {
+                min-height: 50px;
+            }
         }
     </style>
 </head>
@@ -1193,7 +1247,7 @@
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-2">
                         <span class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[0.6rem] font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider shadow-lg">Pungystudio</span>
-                        <span class="text-[0.55rem] text-slate-500 font-mono bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700">v8.1 Pro</span>
+                        <span class="text-[0.55rem] text-slate-500 font-mono bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700">v8.2 Pro</span>
                     </div>
                     <h1 class="text-lg md:text-xl font-bold text-white hidden sm:block">Document &amp; AI Study Suite</h1>
                 </div>
@@ -1325,6 +1379,7 @@
                             <button id="tab-exam" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200">AI Exam</button>
                             <button id="tab-keyconcepts" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200">Key Concepts</button>
                             <button id="tab-solver" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200">🧠 AI Solver</button>
+                            <button id="tab-aoc" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200">🔍 AI AOC</button>
                             <button id="change-file-btn" class="px-3 py-2 text-xs text-red-400 hover:bg-red-950/30 rounded-lg transition-colors">Close</button>
                         </div>
                     </div>
@@ -1489,6 +1544,41 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- ─── AI AOC PANE ─── -->
+                    <div id="aoc-pane" class="hidden glass rounded-2xl border border-slate-700/50 p-6 min-h-[450px]">
+                        <div id="aoc-intro" class="text-center py-4 space-y-2 animate-fade-up">
+                            <h3 class="text-xl font-bold text-white">🔍 AI Area of Concentration (AOC)</h3>
+                            <p class="text-sm text-slate-400 max-w-lg mx-auto">Enter a topic or concept (e.g., "photosynthesis", "machine learning", "Shakespeare") and the AI will find where it appears in your document, explain it, and show the surrounding context.</p>
+                        </div>
+
+                        <div id="aoc-active-area" class="space-y-4">
+                            <div>
+                                <label class="text-sm font-medium text-slate-300 block mb-1.5">Enter your AOC (topic)</label>
+                                <textarea id="aoc-input" rows="2" class="aoc-input-area w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-500" placeholder="e.g., neural networks, climate change, World War II..."></textarea>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-4 pt-2">
+                                <button id="aoc-search-btn" class="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-medium px-6 py-2.5 rounded-xl shadow-xl transition-all duration-300 text-sm hover:scale-105 flex items-center gap-2">
+                                    <svg class="w-4 h-4 animate-spin hidden" id="aoc-spinner" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span id="aoc-btn-text">🔎 Search AOC</span>
+                                </button>
+                                <button id="aoc-clear-btn" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Clear</button>
+                            </div>
+
+                            <!-- Response Area -->
+                            <div id="aoc-response-container" class="hidden mt-4 animate-fade-up">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+                                    <h4 class="text-sm font-semibold text-white">📌 AOC Result</h4>
+                                    <button id="aoc-copy-btn" class="text-xs text-slate-400 hover:text-white transition-colors">📋 Copy</button>
+                                </div>
+                                <div id="aoc-response" class="aoc-response text-slate-200 space-y-3 max-h-[500px] overflow-y-auto pr-2"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1518,7 +1608,7 @@
 
     <script>
         // ════════════════════════════════════════════════════════════════
-        // Pungystudio AI – v8.1 Pro – AI Solver (Document-aware, auto-detect)
+        // Pungystudio AI – v8.2 Pro – AI AOC (Area of Concentration)
         // ════════════════════════════════════════════════════════════════
 
         const JSON_BIN_ID = '6a7a4f06da38895dfed2f54d';
@@ -1564,12 +1654,14 @@
             tabSummary = $('tab-summary'),
             tabExam = $('tab-exam'),
             tabKeyConcepts = $('tab-keyconcepts'),
-            tabSolver = $('tab-solver');
+            tabSolver = $('tab-solver'),
+            tabAoc = $('tab-aoc');
         const viewerPane = $('viewer-pane'),
             summaryPane = $('summary-pane'),
             examPane = $('exam-pane'),
             keyconceptsPane = $('keyconcepts-pane'),
-            solverPane = $('solver-pane');
+            solverPane = $('solver-pane'),
+            aocPane = $('aoc-pane');
         const aiIfyBtn = $('ai-ify-btn');
         const aiSpinner = $('ai-spinner'),
             aiBtnText = $('ai-btn-text'),
@@ -1639,6 +1731,18 @@
         const solverCopyBtn = $('solver-copy-btn');
         const solverIntro = $('solver-intro');
         const solverActiveArea = $('solver-active-area');
+
+        // ─── AOC DOM refs ───
+        const aocInput = $('aoc-input');
+        const aocSearchBtn = $('aoc-search-btn');
+        const aocSpinner = $('aoc-spinner');
+        const aocBtnText = $('aoc-btn-text');
+        const aocResponseContainer = $('aoc-response-container');
+        const aocResponse = $('aoc-response');
+        const aocClearBtn = $('aoc-clear-btn');
+        const aocCopyBtn = $('aoc-copy-btn');
+        const aocIntro = $('aoc-intro');
+        const aocActiveArea = $('aoc-active-area');
 
         // ─── Global state ───
         let isVerified = false,
@@ -2531,10 +2635,11 @@
         }
 
         window.switchTab = function(activeTab) {
-            [tabViewer, tabSummary, tabExam, tabKeyConcepts, tabSolver].forEach(t => t.className =
+            [tabViewer, tabSummary, tabExam, tabKeyConcepts, tabSolver, tabAoc].forEach(t => t.className =
                 'px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all duration-200'
                 );
-            [viewerPane, summaryPane, examPane, keyconceptsPane, solverPane].forEach(p => p.classList.add('hidden'));
+            [viewerPane, summaryPane, examPane, keyconceptsPane, solverPane, aocPane].forEach(p => p.classList.add(
+            'hidden'));
             if (activeTab === 'viewer') {
                 tabViewer.className =
                     'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
@@ -2602,6 +2707,12 @@
                 solverPane.classList.remove('hidden');
                 solverIntro.classList.remove('hidden');
                 solverResponseContainer.classList.add('hidden');
+            } else if (activeTab === 'aoc') {
+                tabAoc.className =
+                    'px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-600/30';
+                aocPane.classList.remove('hidden');
+                aocIntro.classList.remove('hidden');
+                aocResponseContainer.classList.add('hidden');
             }
         };
 
@@ -2665,7 +2776,7 @@
             });
         }
 
-        // ─── RESTORE PROJECT (also sets rawFileText from merge content) ───
+        // ─── RESTORE PROJECT ───
         function restoreProject(project) {
             if (!currentUser) { showAdminToast('Please login first.', 'warning'); return; }
             (async function() {
@@ -2687,7 +2798,7 @@
                     workspaceSection.classList.remove('hidden');
                     uploadSection.classList.add('hidden');
 
-                    // Attempt to get full text from aiify or merge
+                    // Extract full text from aiify or merge
                     let fullText = '';
                     if (data.aiify) {
                         const tempDiv = document.createElement('div');
@@ -2699,7 +2810,6 @@
                             logMessage(`✅ Extracted full text from AI-ify (${rawFileText.length} chars)`, 'success');
                         }
                     } else if (data.merge) {
-                        // Extract text from merge HTML
                         const tempDiv = document.createElement('div');
                         tempDiv.innerHTML = data.merge;
                         fullText = tempDiv.textContent || tempDiv.innerText || '';
@@ -2728,7 +2838,6 @@
                             viewerContent.innerHTML = originalViewerHtml || '';
                         });
                     } else if (data.merge) {
-                        // If no aiify but merge exists, show merge in viewer
                         window.switchTab('viewer');
                         viewerContent.innerHTML = `
                             <div class="mb-4 flex items-center justify-between text-xs text-indigo-400 font-medium bg-indigo-950/40 border border-indigo-900 p-2 rounded-lg animate-fade-up">
@@ -2835,7 +2944,7 @@
             return project;
         }
 
-        // ─── THEORY EXAM FUNCTIONS ─── (unchanged)
+        // ─── THEORY EXAM FUNCTIONS ───
         function renderTheoryModeDiv() {
             theoryContainer.innerHTML = '';
             totalQuestionsBadge.textContent = `${examQuestions.length} Theory Questions`;
@@ -3071,20 +3180,17 @@
                 return;
             }
 
-            // Check if document is loaded
             const hasDoc = rawFileText && rawFileText.length > 0;
             if (!hasDoc && !uploadedFileData) {
                 showError('No document loaded. Please upload a document first.');
                 return;
             }
 
-            // Prepare prompt
             let docText = rawFileText || '';
             if (!docText && uploadedFileData) {
                 docText = '[Document uploaded as PDF/Image – AI will process it]';
             }
 
-            // Truncate if needed
             const maxDocLength = 25000;
             if (docText.length > maxDocLength) {
                 docText = docText.substring(0, maxDocLength) + '... [truncated]';
@@ -3092,7 +3198,6 @@
 
             let prompt = '';
             if (askSpecific) {
-                // User asked a specific question
                 prompt =
                     `You are an AI assistant that answers questions based on the provided document content. 
                     Document content:
@@ -3103,7 +3208,6 @@
                     Provide a clear, structured answer. If it's a math problem, solve step-by-step. If conceptual, explain thoroughly.
                     If the question cannot be answered from the document, say so.`;
             } else {
-                // Auto-detect: ask AI to find and solve all questions in the document
                 prompt =
                     `You are an expert educator and solver. Analyze the following document and determine if it contains any questions, exercises, problems, or tasks that look like an assignment, test, or exam. 
                     If you find questions, solve them step-by-step with detailed explanations. If you find multiple questions, solve all of them. 
@@ -3119,7 +3223,6 @@
                 fileData = uploadedFileData;
             }
 
-            // Show loading
             solverSpinner.classList.remove('hidden');
             solverBtnText.textContent = askSpecific ? 'Thinking...' : 'Scanning...';
             solverAutoBtn.disabled = true;
@@ -3128,7 +3231,6 @@
 
             try {
                 const result = await callGemini(prompt, fileData);
-                // Format response
                 let htmlResponse = `<div class="space-y-2">`;
                 const lines = result.split('\n');
                 let inStep = false,
@@ -3157,7 +3259,6 @@
                     } else if (inFinal) {
                         htmlResponse += line + '<br>';
                     } else {
-                        // Check for headings
                         if (line.match(/^#{1,3} /)) {
                             const level = line.match(/^(#{1,3}) /)[1].length;
                             const text = line.replace(/^#{1,3} /, '');
@@ -3185,6 +3286,118 @@
                 solverBtnText.textContent = askSpecific ? '❓ Ask Question' : '🔍 Auto‑Detect & Solve';
                 solverAutoBtn.disabled = false;
                 solverAskBtn.disabled = false;
+            }
+        }
+
+        // ─── AOC Logic ───
+        async function runAOCSearch() {
+            const topic = aocInput.value.trim();
+            if (!topic) {
+                showAdminToast('Please enter a topic to search for.', 'warning');
+                return;
+            }
+
+            const hasDoc = rawFileText && rawFileText.length > 0;
+            if (!hasDoc && !uploadedFileData) {
+                showError('No document loaded. Please upload a document first.');
+                return;
+            }
+
+            let docText = rawFileText || '';
+            if (!docText && uploadedFileData) {
+                docText = '[Document uploaded as PDF/Image – AI will process it]';
+            }
+
+            const maxDocLength = 25000;
+            if (docText.length > maxDocLength) {
+                docText = docText.substring(0, maxDocLength) + '... [truncated]';
+            }
+
+            const prompt =
+                `You are an expert document analyst. Given the document content and a specific topic (Area of Concentration), find all mentions of that topic, explain the topic in detail based on the document, and show the surrounding context (paragraphs or sections where it appears). 
+                Return a structured response with clear sections:
+                1. **Explanation**: A thorough explanation of the topic as it appears in the document, synthesizing information from all mentions.
+                2. **Locations/Context**: For each occurrence, quote the relevant text (up to a few sentences) and indicate the section or paragraph if possible (e.g., "In the section titled 'Introduction'", or "In paragraph 3").
+                3. **Summary**: A concise summary of the key points about this topic.
+                If the topic is not found in the document, respond with: "The topic '[topic]' was not found in the document."
+                
+                Document content:
+                ${docText}
+                
+                Topic: ${topic}`;
+
+            let fileData = null;
+            if (uploadedFileData && !rawFileText) {
+                fileData = uploadedFileData;
+            }
+
+            aocSpinner.classList.remove('hidden');
+            aocBtnText.textContent = 'Searching...';
+            aocSearchBtn.disabled = true;
+            aocResponseContainer.classList.add('hidden');
+
+            try {
+                const result = await callGemini(prompt, fileData);
+                // Format the response with nice styling
+                let htmlResponse = `<div class="space-y-3">`;
+                const lines = result.split('\n');
+                let inExplanation = false,
+                    inLocations = false,
+                    inSummary = false;
+                for (let line of lines) {
+                    line = line.trim();
+                    if (!line) { htmlResponse += '<br>'; continue; }
+                    if (line.match(/^\*\*Explanation\*\*|^Explanation:/i)) {
+                        if (inLocations) htmlResponse += '</div>';
+                        if (inSummary) htmlResponse += '</div>';
+                        htmlResponse += `<div class="explanation"><span class="exp-label">📖 Explanation</span><br>`;
+                        inExplanation = true;
+                        inLocations = false;
+                        inSummary = false;
+                        continue;
+                    }
+                    if (line.match(/^\*\*Locations\/Context\*\*|^Locations\/Context:/i)) {
+                        if (inExplanation) htmlResponse += '</div>';
+                        if (inSummary) htmlResponse += '</div>';
+                        htmlResponse += `<div class="location"><span class="loc-label">📍 Locations & Context</span><br>`;
+                        inExplanation = false;
+                        inLocations = true;
+                        inSummary = false;
+                        continue;
+                    }
+                    if (line.match(/^\*\*Summary\*\*|^Summary:/i)) {
+                        if (inExplanation) htmlResponse += '</div>';
+                        if (inLocations) htmlResponse += '</div>';
+                        htmlResponse += `<div class="summary"><span class="sum-label">📌 Summary</span><br>`;
+                        inExplanation = false;
+                        inLocations = false;
+                        inSummary = true;
+                        continue;
+                    }
+                    if (inExplanation || inLocations || inSummary) {
+                        // bold any quoted text
+                        line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                        htmlResponse += `<p class="text-sm">${line}</p>`;
+                    } else {
+                        // Default paragraph
+                        htmlResponse += `<p class="text-sm">${line}</p>`;
+                    }
+                }
+                if (inExplanation) htmlResponse += '</div>';
+                if (inLocations) htmlResponse += '</div>';
+                if (inSummary) htmlResponse += '</div>';
+                htmlResponse += '</div>';
+
+                aocResponse.innerHTML = htmlResponse;
+                aocResponseContainer.classList.remove('hidden');
+                logMessage(`AOC search for "${topic}" completed.`, 'success');
+            } catch (err) {
+                showError('AOC search error: ' + err.message);
+                logMessage('AOC search error: ' + err.message, 'error');
+            } finally {
+                aocSpinner.classList.add('hidden');
+                aocBtnText.textContent = '🔎 Search AOC';
+                aocSearchBtn.disabled = false;
             }
         }
 
@@ -3256,6 +3469,7 @@
             tabExam.addEventListener('click', () => window.switchTab('exam'));
             tabKeyConcepts.addEventListener('click', () => window.switchTab('keyconcepts'));
             tabSolver.addEventListener('click', () => window.switchTab('solver'));
+            tabAoc.addEventListener('click', () => window.switchTab('aoc'));
 
             renderHistory();
             clearHistoryBtn.addEventListener('click', clearHistory);
@@ -3314,6 +3528,8 @@
                 keyconceptsActive.classList.add('hidden');
                 solverIntro.classList.remove('hidden');
                 solverResponseContainer.classList.add('hidden');
+                aocIntro.classList.remove('hidden');
+                aocResponseContainer.classList.add('hidden');
                 hideError();
                 clearInterval(examTimer);
                 timerDisplay.classList.add('hidden');
@@ -3337,6 +3553,7 @@
                 submitExamBtn.classList.remove('hidden');
                 theoryImages = {};
                 solverQuestion.value = '';
+                aocInput.value = '';
             }
 
             function showWorkspace() {
@@ -4004,7 +4221,6 @@
                 handleMergeFiles(e.dataTransfer.files);
             });
 
-            // ─── Handle Merge Files (with image support) ───
             async function handleMergeFiles(fileList) {
                 const allowed = ['txt', 'md', 'docx', 'pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
                 const promises = [];
@@ -4163,7 +4379,6 @@
                         currentProject = name && name.trim() ? name.trim() : 'Untitled';
                         updateProjectDisplay(currentProject);
                     }
-                    // Save merge to history (JSON Bin)
                     saveHistoryToUser('merge', currentProject, cleaned);
 
                 } catch (err) {
@@ -4235,6 +4450,36 @@
                         document.execCommand('copy');
                         showAdminToast('Copied!', 'success');
                     });
+                }
+            });
+
+            // ─── AOC Events ───
+            aocSearchBtn.addEventListener('click', runAOCSearch);
+            aocClearBtn.addEventListener('click', () => {
+                aocInput.value = '';
+                aocResponseContainer.classList.add('hidden');
+            });
+            aocCopyBtn.addEventListener('click', () => {
+                const text = aocResponse.innerText || aocResponse.textContent || '';
+                if (text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showAdminToast('Copied to clipboard.', 'success');
+                    }).catch(() => {
+                        const range = document.createRange();
+                        range.selectNode(aocResponse);
+                        window.getSelection().removeAllRanges();
+                        window.getSelection().addRange(range);
+                        document.execCommand('copy');
+                        showAdminToast('Copied!', 'success');
+                    });
+                }
+            });
+
+            // Allow Enter key to trigger AOC search
+            aocInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    aocSearchBtn.click();
                 }
             });
 
